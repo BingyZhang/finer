@@ -1,0 +1,106 @@
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render_to_response, render
+from django.http import HttpResponse, HttpResponseRedirect
+from crypto import commitment
+import time, requests, hashlib
+from datetime import datetime
+from elect_def.forms import DefForm
+from elect_def.models import Election, Choice
+from django.template import RequestContext
+import cStringIO, zipfile, csv, copy,os, base64, random
+from django.core.files import File
+# Create your views here.
+
+BB_URL = "http://tal.di.uoa.gr/finer"
+
+def base36encode(number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
+    """Converts an integer to a base36 string."""
+    if not isinstance(number, (int, long)):
+        raise TypeError('number must be an integer')
+    base36 = ''
+    sign = ''
+    if number < 0:
+        sign = '-'
+        number = -number
+    if 0 <= number < len(alphabet):
+        return sign + alphabet[number]
+    while number != 0:
+        number, i = divmod(number, len(alphabet))
+        base36 = alphabet[i] + base36
+    return sign + base36
+ 
+def base36decode(number):
+    return int(number, 36)
+
+@csrf_exempt  # not secure, need signature or TBA
+def index(request):
+    if request.method == 'POST':
+        q = request.POST['question']
+        start = request.POST['elect_start']
+        end = request.POST['elect_end']
+        Paffiliation = request.POST['Paffiliation'].lower()
+        title = request.POST['title'].lower()
+        Porg = request.POST['Porg'].lower()
+        total = request.POST['total']
+        opts = []
+        # maximum 50 options
+        for i in range(1,51):
+            temp = request.POST.get('opt'+str(i),'')
+            if temp != '':
+                opts.append(temp)
+            else:
+                break
+        if Paffiliation == '':
+	    Paffiliation = '*'
+	if title == '':
+	    title = '*'
+	if Porg == '':
+	    Porg = '*'
+        start_time = time.strptime(start, "%m/%d/%Y %H:%M")
+        end_time = time.strptime(end, "%m/%d/%Y %H:%M")
+        #EID should be hash of question start and end time
+        eid = hashlib.sha1(q + start + end).hexdigest()
+        #first post to BB
+        files = { 'question': q, 'start':start,'end':end, 'eid':eid,'total':total}
+        for i in range(len(opts)):
+            files["opt"+str(i)] = opts[i]
+        r = requests.post(BB_URL+'/def/',data = files)
+        #if r != "success":
+        #    return HttpResponse(r)#('Error!')
+
+        #create election
+        new_e = Election(Paffiliation = Paffiliation, title = title, Porg = Porg, start = datetime.fromtimestamp(time.mktime(start_time)), end = datetime.fromtimestamp(time.mktime(end_time)), question = q, EID = eid, total = total)
+        new_e.save()
+        # store choices
+        for x in opts:
+            new_c = Choice(election = new_e, text = x)
+            new_c.save()
+        
+        #confirm EA
+        data = []
+        data.append("Question: "+q)
+        for i in range(len(opts)):
+            data.append("Option "+str(i+1)+": "+opts[i])
+        data.append("Start time: "+start)
+        data.append("End time: "+end)
+        data.append("Maximum number of voters: "+total)
+        data.append("eduPersonPrimaryAffiliation: "+Paffiliation)
+        data.append("Tile: "+title)
+        data.append("eduPersonPrimaryOrgUnitDN: "+Porg)
+        data.append("VBB URL: "+BB_URL+"/vbb/"+eid+"/")
+        data.append("ABB URL: "+BB_URL+"/abb/"+eid+"/")
+        name = request.META['HTTP_CAS_CN_LANG_EL']
+        email = request.META['HTTP_CAS_MAIL']
+        return render_to_response('confirm.html',{'name':name,'data':data, 'email':email})
+    else:
+        return render_to_response('def.html', context_instance=RequestContext(request))
+
+
+
+
+def TBA(request, eid = 0):
+    try:
+	e = Election.objects.get(EID=eid)
+    except Election.DoesNotExist:
+	return HttpResponse('The election ID is invalid!')
+    return render_to_response('def.html')
