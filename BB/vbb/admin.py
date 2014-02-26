@@ -1,5 +1,5 @@
 from django.contrib import admin
-from vbb.models import Election, Choice, Vbb, Dballot, Bba
+from vbb.models import Election, Choice, Vbb, Dballot, Bba, Randomstate
 
 
 # Register your models here.
@@ -24,12 +24,18 @@ class ChoiceAdmin(admin.ModelAdmin):
     search_fields = ['text']
 
 class BbaAdmin(admin.ModelAdmin):
-    list_display = ['serial','code']
+    list_display = ['serial','key']
     list_filter = ['serial']
     search_fields = ['serial']
+
+class RandomAdmin(admin.ModelAdmin):
+    list_display = ['notes','random']
+    list_filter = ['notes']
+    search_fields = ['notes']
 
 admin.site.register(Vbb, VbbAdmin)
 admin.site.register(Bba, BbaAdmin)
 admin.site.register(Election, ElectionAdmin)
 admin.site.register(Choice, ChoiceAdmin)
 admin.site.register(Dballot, DballotAdmin)
+admin.site.register(Randomstate, RandomAdmin)

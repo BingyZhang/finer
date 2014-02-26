@@ -20,6 +20,7 @@
 
 {% block content %}
 <div class="container">
+<h1>Welcome {{name}},</h1>
 <div align="center" class="highlight">
     <h1>Election Definition Configuration</h1>
 <form role="form" action="" method="post" id="def" accept-charset="utf-8" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>{% csrf_token %}
@@ -48,6 +49,23 @@
     </div>
 </div>
 
+<div>
+	<label><font size="6">Ballot Distribution</font></label>
+	<div class="form-group">
+	<div class="btn-group" data-toggle="buttons">
+  	<label class="btn btn-info">
+    	<input type="radio" name="options" id="option1"> CAS
+  	</label>
+  	<label class="btn btn-info">
+    	<input type="radio" name="options" id="option2"> Paper
+  	</label>
+  	<label class="btn btn-info">
+    	<input type="radio" name="options" id="option3"> Email
+  	</label>
+	</div>
+	</div>
+</div>
+
 <div class="form-group has-warning">
 <p class="control-label"><label><font size="6">Voter Constraints</font></label></p>
 <div>
@@ -56,17 +74,17 @@
 </div>
 
 <div>
-<label class="control-label" for="Paffiliation">eduPersonPrimaryAffiliation</label>
+<label class="control-label" for="Paffiliation">eduPersonPrimaryAffiliation (e.g. student, faculty, staff, employee, member)</label>
 <textarea rows="1" class="form-control" id="Paffiliation" cols="80" style="width:100%" name="Paffiliation"/></textarea>
 </div>
 
 <div>
-<label class="control-label" for="title">Tile</label>
+<label class="control-label" for="title">Tile (e.g. PhD Candidate, Postgraduate Student, Undergraduate Student, Assistant Professor)</label>
 <textarea rows="1" class="form-control" id="title" cols="80" style="width:100%" name="title"/></textarea>
 </div>
 
 <div>
-<label class="control-label" for="Porg">eduPersonPrimaryOrgUnitDN</label>
+<label class="control-label" for="Porg">eduPersonPrimaryOrgUnitDN (e.g. ou=InfTel, ou=TherInf, ou=CmptSystApp, ou=ComsSigPro)</label>
 <textarea rows="5" class="form-control" id="Porg" cols="80" style="width:100%" name="Porg"/></textarea>
 </div>
 
@@ -87,10 +105,9 @@
 
 
 {% block afterbody %}
-<script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
-<script type="text/javascript" src="{% static "js/jquery-ui-timepicker-addon.js" %}"></script>
     <script type="text/javascript">
         $(document).ready(function(){
+
                           var startDateTextBox = $('#elect_start');
                           var endDateTextBox = $('#elect_end');
                           
@@ -139,7 +156,7 @@
                       
         });
     </script>
-
-
+<script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+<script type="text/javascript" src="{% static "js/jquery-ui-timepicker-addon.js" %}"></script>
 
 {% endblock %}

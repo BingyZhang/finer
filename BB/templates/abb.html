@@ -2,14 +2,14 @@
 {% block title %}Audit Bulletin Board{% endblock %}
 
 
-
 {% block content %}
 <div class="page-header">
   <div class="container">
        <div align="center"> 
 		   <h1>Audit Bulletin Board Public View</h1>
-		<a class="btn btn-large btn-primary" type="button"
-href="export/0/0/" target="_blank">Export</a>
+           <button class="btn btn-primary " data-toggle="modal" data-target="#exportModal">
+               Export Data
+           </button>
 			<h1><font color="purple">{{election.question}}</font></h1>
 			<div class="btn-group">
   			<button type="button" class="btn btn-default" disabled="disabled">Start time: {{election.start}}</button>
@@ -19,41 +19,73 @@ href="export/0/0/" target="_blank">Export</a>
   </div>
 </div>
 
+<!-- Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Export Configuration</h4>
+            </div>
+            <div class="modal-body">
+                <form role="form" action="http://tal.di.uoa.gr/rse/abb/12/" method="post" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>{% csrf_token %}
+                <div class="form-group" align="left">
+                <div class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-info">
+                        <input type="checkbox" name = "abbCheck"> EA's Operation Log
+                    </label>
+                    <label class="btn btn-info">
+                        <input type="checkbox" name = "vbbCheck"> VBB Records
+                    </label>
+                    <label class="btn btn-info">
+                        <input type="checkbox" name = "randCheck"> Public Randomness
+                            </label>
+                    <label class="btn btn-info">
+                        <input type="checkbox" name = "defCheck"> Election Defition
+                    </label>
+                </div>
+                </div>
+                <div class="form-group" align="right">
+                    <button type="submit" class="btn btn-primary" onclick="$('#exportModal').modal('hide');">Download</button>
+                </div>
+                </form>
+            </div><!-- /.modal-body -->
+
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 
 
-<ul id="Tables" class="nav nav-tabs">
-  {% for num in TableNum %}
-     {% if forloop.first %} <li class="active">  {% else %} <li>  {% endif %} <a href="#tab{{forloop.counter}}" data-toggle="tab">Table {{num}}</a></li>
-  {% endfor %}
+<div class="container">
+<ul class="pagination">
+    {% for num in TableNum %}
+    <li {% if num|add:"0" = current|add:"0" %}class="active"{% endif %} id="{{num}}"><a href="http://tal.di.uoa.gr/rse/abb/12/{{num}}/">Table {{num}}</a></li>
+    {% endfor %}
 </ul>
 
- <div id="TablesContent" class="tab-content">
    {% for smalldata in BigData %}
-      <div class="tab-pane fade {% if forloop.first %} in active{%endif %}" id="tab{{forloop.counter}}">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#allversions{{forloop.counter}}" href="#T{{forloop.counter}}">
+                        Update Logs
+                    </a>
+                </h4>
+            </div>
+            <div id="T{{forloop.counter}}" class="panel-collapse collapse">
+                <div class="panel-body">
+                    {% for date in smalldata.Log %}
+                    <p>Version {{forloop.counter}}: updated at {{date}}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
 
-          <div class="panel panel-default">
-          <div class="panel-heading">
-          <h4 class="panel-title">
-          <a data-toggle="collapse" data-parent="#allversions{{forloop.counter}}" href="#T{{forloop.counter}}">
-           Update Log and Archives
-          </a>
-          </h4>
-          </div>
-          <div id="T{{forloop.counter}}" class="panel-collapse collapse">
-          <div class="panel-body">
-	    {% for ver in smalldata.Ver %}
-	    <p>Version {{ver.version}}: updated at {{ver.date}} <a
-          class="btn btn-large btn-default btn-sm" type="button"
-          href="export/{{forloop.parentloop.counter}}/{{ver.version}}/" target="_blank">CSV and signature</a></p>
-	    {% endfor %}
-          </div>
-          </div>
-          </div>
-	    
-	
-      <ul class="nav nav-pills">
+    
+    
+      <ul class="nav nav-tabs">
       {% for ver in smalldata.Ver %}
-         {% if forloop.last %} <li class="active">  {% else %} <li>  {% endif %} <a href="#T{{forloop.parentloop.counter}}V{{forloop.counter}}" data-toggle="tab">Ver. {{ver.version}}</a></li>
+         {% if forloop.last %} <li class="active">  {% else %} <li>  {% endif %} <a href="#T{{forloop.parentloop.counter}}V{{forloop.counter}}" data-toggle="tab">Ver. {{ver}}</a></li>
       {% endfor %}
       </ul>
       
@@ -71,29 +103,45 @@ href="export/0/0/" target="_blank">Export</a>
               </thead>
               <tbody>
               {% for item in itemset %}
+{% if forloop.first %}	
+		<tr>
+	      {% for entry in item %}
+	         <td><div style="word-wrap: break-word">
+	      {% if entry.opened %} 
+				<button style="width: 120px" type="button" class="btn  btn-info" data-toggle="popover" title="Key, Commitment, Decommitment:"
+data-content="{{entry.plaintext}},       {{entry.commitment}},     {{entry.decommitment}}">Key Opened</button>
+		  {% else %} 
+			{% if entry.commitment %}
+				<button style="width: 120px" type="button" class="btn  btn-warning" data-toggle="popover"
+     title="Commitment:" data-content="{{entry.commitment}}">Key Committed</button>
+			{% endif %}
+		  {% endif %}
+		 </div></td>   
+	      {% endfor %}
+	      </tr>
+
+{% else %}	
 	      <tr>
 	      {% for entry in item %}
 	         <td><div style="word-wrap: break-word">
-	         {% if entry.opened %} 
-{% ifequal entry.plaintext "No" %}<button style="width: 50px" type="button" class="btn btn-warning" data-toggle="popover"
-    title="Commitment, Decommitment:"
-   data-content="{{entry.commitment}},     {{entry.decommitment}}">{{entry.plaintext}}</button>   
-{% else %}
-<button type="button" {% ifnotequal entry.plaintext "Voted" %}class="btn btn-info"{% else %}style="width: 87px" class="btn btn-success"{% endifnotequal %}  data-toggle="popover"
-    title="Commitment, Decommitment:"
-   data-content="{{entry.commitment}},     {{entry.decommitment}}">{% ifequal entry.plaintext "Voted" %}<span class="glyphicon glyphicon-ok"></span>    {% endifequal %}{{entry.plaintext}}</button>
-{% endifequal %}
-		 {% else %} 
+	      {% if entry.opened %} 
+				<button type="button" style="width: 120px" class="btn  btn-success" data-toggle="popover" title="Ciphertext:"
+data-content="{{entry.commitment}}">
+		   {% ifequal entry.plaintext "Voted" %}<span class="glyphicon glyphicon-ok"></span>    {% endifequal %}
+		   {% ifequal entry.plaintext "Yes" %}<span class="glyphicon glyphicon-thumbs-up"></span>    {% endifequal %}
+		   {% ifequal entry.plaintext "No" %}<span class="glyphicon glyphicon-thumbs-down"></span>    {% endifequal %}
+		   {{entry.plaintext}}</button>
+		  {% else %} 
 			{% if entry.commitment %}
-				<button style="width: 120px" type="button" class="btn btn-danger" data-toggle="popover"
-     title="Commitment:" data-content="{{entry.commitment}}">Committed</button>
+				<button style="width: 120px" type="button" class="btn  btn-danger" data-toggle="popover"
+     title="Ciphertext:" data-content="{{entry.commitment}}">Encryption</button>
 			{% endif %}
- 
-		 {% endif %}
+		  {% endif %}
 		 </div></td>   
 	      {% endfor %}
-         </tr>
-         {% endfor %}
+	      </tr>
+{% endif %} 
+	      {% endfor %}
         </tbody>
        </table>
 	    
@@ -103,13 +151,8 @@ href="export/0/0/" target="_blank">Export</a>
 
 	 {% endfor %}   <!-- smalldata -->  
     </div>  <!-- small-tab-content -->
-
-
-    
- </div> <!-- tab content -->   
 {% endfor %} <!-- bigdata -->
- </div> <!-- Table tab -->
-
+</div> <!-- container -->
  
 {% endblock %}
 
@@ -128,6 +171,7 @@ href="export/0/0/" target="_blank">Export</a>
 		})
 
 	}(window.jQuery)
+    
 	</script>
 {% endblock %}
 

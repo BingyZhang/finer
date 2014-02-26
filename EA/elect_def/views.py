@@ -7,11 +7,13 @@ from datetime import datetime
 from elect_def.forms import DefForm
 from elect_def.models import Election, Choice
 from django.template import RequestContext
-import cStringIO, zipfile, csv, copy,os, base64, random
+import cStringIO, zipfile, csv, copy,os, base64, random,binascii
 from django.core.files import File
+from django.utils import timezone
+from tasks import prepare_ballot
 # Create your views here.
 
-BB_URL = "http://tal.di.uoa.gr/finer"
+BB_URL = "http://tal.di.uoa.gr/finer/"
 
 def base36encode(number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
     """Converts an integer to a base36 string."""
@@ -32,8 +34,10 @@ def base36encode(number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
 def base36decode(number):
     return int(number, 36)
 
+
 @csrf_exempt  # not secure, need signature or TBA
 def index(request):
+    name = request.META['HTTP_CAS_CN_LANG_EL']
     if request.method == 'POST':
         q = request.POST['question']
         start = request.POST['elect_start']
@@ -56,10 +60,17 @@ def index(request):
 	    title = '*'
 	if Porg == '':
 	    Porg = '*'
-        start_time = time.strptime(start, "%m/%d/%Y %H:%M")
-        end_time = time.strptime(end, "%m/%d/%Y %H:%M")
+	if total == '':
+	    total = "1"
+	if start =='':
+	    start = timezone.now().strftime("%m/%d/%Y %H:%M")
+        if end =='':
+            end = timezone.now().strftime("%m/%d/%Y %H:%M")
+	start_time = time.strptime(start, "%m/%d/%Y %H:%M")
+	end_time = time.strptime(end, "%m/%d/%Y %H:%M")
         #EID should be hash of question start and end time
-        eid = hashlib.sha1(q + start + end).hexdigest()
+        #eid = hashlib.sha1(q + start + end).hexdigest()
+	eid = base36encode(long(binascii.hexlify(hashlib.sha1(q + start + end).digest()), 16))
         #first post to BB
         files = { 'question': q, 'start':start,'end':end, 'eid':eid,'total':total}
         for i in range(len(opts)):
@@ -89,11 +100,24 @@ def index(request):
         data.append("eduPersonPrimaryOrgUnitDN: "+Porg)
         data.append("VBB URL: "+BB_URL+"/vbb/"+eid+"/")
         data.append("ABB URL: "+BB_URL+"/abb/"+eid+"/")
-        name = request.META['HTTP_CAS_CN_LANG_EL']
         email = request.META['HTTP_CAS_MAIL']
+	#celery prepare ballots
+	prepare_ballot.delay(new_e, int(total)+1,len(opts))
         return render_to_response('confirm.html',{'name':name,'data':data, 'email':email})
     else:
-        return render_to_response('def.html', context_instance=RequestContext(request))
+        return render_to_response('def.html', {'name':name}, context_instance=RequestContext(request))
+
+
+
+
+def vote(request, eid = 0):
+    try:
+        e = Election.objects.get(EID=eid)
+    except Election.DoesNotExist:
+        return HttpResponse('The election ID is invalid!')
+    return render_to_response('vote.html')
+
+
 
 
 

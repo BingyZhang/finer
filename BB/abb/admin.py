@@ -1,17 +1,32 @@
 from django.contrib import admin
-from abb.models import Abb, UpdateInfo
+from abb.models import AbbKey,AbbData, UpdateInfo, Auxiliary, Abbinit
 
 
 # Register your models here.
-class AbbAdmin(admin.ModelAdmin):
-    list_display = ('table', 'version','serial_codes', 'ballot_check', 'possible_votes', 'marked_as_voted')
+class AbbKeyAdmin(admin.ModelAdmin):
+    list_display = ('table', 'version','column', 'commitment', 'plaintext', 'decommitment')
     list_filter = ['table']
-    search_fields = ['table']
+    search_fields = ['column']
+
+class AbbDataAdmin(admin.ModelAdmin):
+    list_display = ('table', 'version','column', 'ciphertext', 'plaintext')
+    list_filter = ['table']
+    search_fields = ['column']    
+
+class AuxiliaryAdmin(admin.ModelAdmin):
+    list_display = ('id','randomnessA','randomnessB','vbb_data','election_def')   
 
 class UpdateInfoAdmin(admin.ModelAdmin):
-    list_display = ('table', 'version', 'date')
-    list_filter = ['table']
-    search_fields = ['table']
+    list_display = ('text', 'date')
 
-admin.site.register(Abb, AbbAdmin)
+
+class AbbinitAdmin(admin.ModelAdmin):
+    list_display = ('serial', 'enc1','enc2')
+    list_filter = ['serial']
+    search_fields = ['serial']
+
+admin.site.register(Auxiliary, AuxiliaryAdmin)
+admin.site.register(AbbKey, AbbKeyAdmin)
+admin.site.register(AbbData, AbbDataAdmin)
 admin.site.register(UpdateInfo, UpdateInfoAdmin)
+admin.site.register(Abbinit, AbbinitAdmin)

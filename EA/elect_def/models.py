@@ -30,10 +30,33 @@ class Choice(models.Model):
 	def __str__(self):
 		return str(self.text)
 
-class Bba(models.Model):
+class Ballot(models.Model):
 	election = models.ForeignKey(Election)
 	serial = models.CharField(max_length=1024)
-	voted = models.BooleanField(default=False)
-	code = models.CharField(max_length=1024)
+	used = models.BooleanField(default=False)
+	key = models.CharField(max_length=1024)
+	codes1 = models.TextField(null=True, blank=True)
+	votes1 = models.TextField(null=True, blank=True)
+	rec1 = models.TextField(null=True, blank=True)
+	cipher1 = models.TextField(null=True, blank=True)
+	codes2 = models.TextField(null=True, blank=True)
+	votes2 = models.TextField(null=True, blank=True)
+	cipher2 = models.TextField(null=True, blank=True)
+	rec2 = models.TextField(null=True, blank=True)
 	def __str__(self):
-		return "Serial#: "+str(self.serial)+" Code: "+ str(self.code)
+		return "Serial#: "+str(self.serial)
+
+class Assignment(models.Model):
+        election = models.ForeignKey(Election)
+        vID = models.CharField(max_length=1024)
+        serial = models.CharField(max_length=1024)
+        def __str__(self):
+                return str(self.vID)
+
+
+class Randomstate(models.Model):
+        election = models.ForeignKey(Election)
+        notes = models.CharField(max_length=256)
+        random = models.CharField(max_length=1024)
+        def __str__(self):
+                return str(self.notes)

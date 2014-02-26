@@ -17,7 +17,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <p class="navbar-brand"> Please cast your vote by entring your serial number and vote code here!</p>
+          <p class="navbar-brand"> Please cast your vote by here!</p>
         </div>
         <div class="navbar-collapse collapse">
           <form class="navbar-form navbar-right" role="form" action="" method="post" id="formvote" accept-charset="utf-8" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>{% csrf_token %}
@@ -40,7 +40,9 @@
 		<p><div class="btn-group">
   			<button type="button" class="btn btn-default" disabled="disabled">Start time: {{election.start}}</button>
   			<button type="button" class="btn btn-default" disabled="disabled">End time: {{election.end}}</button>
-		</div></p>		
+		</div>
+        <a class="btn btn-primary" type="button" href="export/" target="_blank">Export Data</a>
+        </p>
 		<div class="col-md-6">
 		{% if running == 0 %}
 			<button type="button" class="btn btn-warning btn-lg" disabled="disabled"><span class="glyphicon glyphicon-list-alt"></span> The election will start at {{election.start}}</button>
@@ -64,6 +66,9 @@
 		{% endif %}
 		{% if running == 2 %}
 			<button type="button" class="btn btn-danger btn-lg" disabled="disabled"><span class="glyphicon glyphicon-stats"></span> The election ended. Waiting for tally results...</button>
+		{% endif %}
+		{% if running == 10 %}
+			<button type="button" class="btn btn-warning btn-lg" disabled="disabled"><span class="glyphicon glyphicon-lock"></span> The election is currently locked.</button>
 		{% endif %}
 		</div>
 		
@@ -93,6 +98,9 @@
 		<p>  1. The submitted vote code is invalid.</p>
 		<p>  2. The ballot is already casted.</p>
 		<p>  3. The dual ballot is already casted.</p>
+        <p>  4. This election has not started yet.</p>
+        <p>  5. This election is already ended.</p>
+        <p>  6. This election is currently locked.</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">OK</button> 
@@ -147,10 +155,8 @@
             <th>Serial #</th>
             <th>Voted Code</th>
 			<th>Casted Time</th>
-            {% for opt in options %}
-            <th>Uncasted Code {{ forloop.counter }}</th>
-            <th>Option {{ forloop.counter }}</th>
-            {% endfor %}
+            <th>Check Code (For Audit Only)</th>
+            <th>Check Vote (For Audit Only)</th>
         </tr>
     </thead>
     <tbody>

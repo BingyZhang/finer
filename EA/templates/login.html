@@ -22,7 +22,7 @@
         <h2>You are eligible for the following election(s):</h2>
         {% for entry in elist %}
         <p><font size="4">Election {{forloop.counter}}:  </font>      <a class="btn btn-large {% if entry.ended %}btn-warning" disabled="disabled"{% else %}btn-success"{% endif %} type="button"
-            href="{{BB_URL}}/init/{{entry.EID}}" target="_blank">{{entry.e.question}}</a>
+            href="{{BB_URL}}/vote/{{entry.EID}}" target="_blank">{{entry.e.question}}</a>
         <div class="btn-group">
                 <button type="button" class="btn btn-default" disabled="disabled">Start time: {{entry.e.start}}</button>
                 <button type="button" class="btn btn-default" disabled="disabled">End time: {{entry.e.end}}</button>

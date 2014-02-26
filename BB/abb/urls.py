@@ -4,6 +4,7 @@ from abb import views
 
 urlpatterns = patterns('',
     url(r'^(?P<eid>\w+)/$', views.index),
-	url(r'^(?P<eid>\w+)/export/(?P<table>\d+)/(?P<ver>\d+)/$', views.export),
-	url(r'^$', views.empty)
+    url(r'^(?P<eid>\w+)/(?P<tab>\d+)/$', views.index),                    
+    url(r'^(?P<eid>\w+)/upload/$', views.upload),
+    url(r'^$', views.empty),                  
 )
