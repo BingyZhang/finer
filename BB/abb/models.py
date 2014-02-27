@@ -55,4 +55,6 @@ class Abbinit(models.Model):
     enc2 = models.TextField(null=True, blank=True)
     cipher1 = models.TextField(null=True, blank=True)
     cipher2 = models.TextField(null=True, blank=True)
-    aux = models.TextField(null=True, blank=True)
+    aux1 = models.TextField(null=True, blank=True)
+    aux2 = models.TextField(null=True, blank=True)
+    zeroone = models.TextField(null=True, blank=True)

@@ -58,5 +58,6 @@ class Bba(models.Model):
 	serial = models.CharField(max_length=1024)
 	voted = models.BooleanField(default=False)
 	key = models.CharField(max_length=1024)
+	n = models.IntegerField(default=0)
 	def __str__(self):
 		return "Serial#: "+str(self.serial)

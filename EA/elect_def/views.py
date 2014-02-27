@@ -98,12 +98,12 @@ def index(request):
         data.append("eduPersonPrimaryAffiliation: "+Paffiliation)
         data.append("Tile: "+title)
         data.append("eduPersonPrimaryOrgUnitDN: "+Porg)
-        data.append("VBB URL: "+BB_URL+"/vbb/"+eid+"/")
-        data.append("ABB URL: "+BB_URL+"/abb/"+eid+"/")
+	VBB_url = BB_URL+"vbb/"+eid+"/"
+        ABB_url = BB_URL+"abb/"+eid+"/"
         email = request.META['HTTP_CAS_MAIL']
 	#celery prepare ballots
 	prepare_ballot.delay(new_e, int(total)+1,len(opts))
-        return render_to_response('confirm.html',{'name':name,'data':data, 'email':email})
+        return render_to_response('confirm.html',{'name':name,'data':data, 'email':email,'VBB':VBB_url,'ABB':ABB_url})
     else:
         return render_to_response('def.html', {'name':name}, context_instance=RequestContext(request))
 

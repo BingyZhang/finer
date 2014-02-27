@@ -119,12 +119,12 @@
           <h4 class="modal-title"><span class="glyphicon glyphicon-ok-sign"></span> Your vote is accepted!</h4>
         </div>
         <div class="modal-body">
-		<p>Could you please identify that the following code is included in your dual ballot and select its corresponding option for us?</p>	
+		<p>Could you please identify that the following codes are included in your dual ballot and provide the corresponding option for one of the code?</p>
 		<form class="form-horizontal" role="form"action="" method="post" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>{% csrf_token %}
 		<div class="form-group">
 		<label for="inputcode" class="col-sm-2 control-label">Code: </label>
 		<div class="col-sm-10">
-		<input type="text" id="inputcode" name = "checkcode"  readonly="true" class="form-control" value="checkcode">
+		<input id="inputcode">
 		</div>
 		</div>
 		<div class="form-group">

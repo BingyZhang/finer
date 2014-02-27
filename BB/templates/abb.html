@@ -32,13 +32,13 @@
                 <div class="form-group" align="left">
                 <div class="btn-group" data-toggle="buttons">
                     <label class="btn btn-info">
-                        <input type="checkbox" name = "abbCheck"> EA's Operation Log
+                        <input type="checkbox" name = "abbCheck"> ABB Data
                     </label>
                     <label class="btn btn-info">
                         <input type="checkbox" name = "vbbCheck"> VBB Records
                     </label>
                     <label class="btn btn-info">
-                        <input type="checkbox" name = "randCheck"> Public Randomness
+                        <input type="checkbox" name = "randCheck"> Voter's Randomn Coin
                             </label>
                     <label class="btn btn-info">
                         <input type="checkbox" name = "defCheck"> Election Defition
@@ -57,42 +57,15 @@
 
 
 <div class="container">
-<ul class="pagination">
-    {% for num in TableNum %}
-    <li {% if num|add:"0" = current|add:"0" %}class="active"{% endif %} id="{{num}}"><a href="http://tal.di.uoa.gr/rse/abb/12/{{num}}/">Table {{num}}</a></li>
-    {% endfor %}
-</ul>
-
-   {% for smalldata in BigData %}
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#allversions{{forloop.counter}}" href="#T{{forloop.counter}}">
-                        Update Logs
-                    </a>
-                </h4>
-            </div>
-            <div id="T{{forloop.counter}}" class="panel-collapse collapse">
-                <div class="panel-body">
-                    {% for date in smalldata.Log %}
-                    <p>Version {{forloop.counter}}: updated at {{date}}</p>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-    
-    
       <ul class="nav nav-tabs">
-      {% for ver in smalldata.Ver %}
+      {% for ver in BigData.Ver %}
          {% if forloop.last %} <li class="active">  {% else %} <li>  {% endif %} <a href="#T{{forloop.parentloop.counter}}V{{forloop.counter}}" data-toggle="tab">Ver. {{ver}}</a></li>
       {% endfor %}
       </ul>
       
       <div class="tab-content">
-      {% for itemset in smalldata.Data %}	
+      {% for itemset in BigData.Data %}
       <div class="tab-pane fade {% if forloop.last %} in active{%endif %}" id="T{{forloop.parentloop.counter}}V{{forloop.counter}}">
-	    
 	      <table class="table table-hover manypopovers">
               <thead>
               <tr>
@@ -102,46 +75,32 @@
               </tr>
               </thead>
               <tbody>
-              {% for item in itemset %}
-{% if forloop.first %}	
+{% for item in itemset %}
 		<tr>
 	      {% for entry in item %}
 	         <td><div style="word-wrap: break-word">
-	      {% if entry.opened %} 
-				<button style="width: 120px" type="button" class="btn  btn-info" data-toggle="popover" title="Key, Commitment, Decommitment:"
-data-content="{{entry.plaintext}},       {{entry.commitment}},     {{entry.decommitment}}">Key Opened</button>
-		  {% else %} 
-			{% if entry.commitment %}
-				<button style="width: 120px" type="button" class="btn  btn-warning" data-toggle="popover"
-     title="Commitment:" data-content="{{entry.commitment}}">Key Committed</button>
-			{% endif %}
-		  {% endif %}
-		 </div></td>   
+            {% if forloop.first %}
+                {% if entry %}
+            <button style="width: 100px" type="button" class="btn btn-success" data-toggle="popover"
+     title="Commitment:" data-content="some cipher">{{entry}}</button>
+                {% endif %}
+            {% endif %}
+            {% if forloop.counter = 2 %}
+            <button style="width: 100px" type="button" class="btn btn-warning" data-toggle="popover"
+                title="Commitment:" data-content="{{entry}}">Committed</button>
+            {% endif %}
+            {% if forloop.counter = 3 %}
+            <button style="width: 100px" type="button" class="btn btn-danger" data-toggle="popover"
+                title="Commitment:" data-content="{{entry}}">Encrypted</button>
+            {% endif %}
+            {% if forloop.counter = 4 %}
+            <button style="width: 100px" type="button" class="btn btn-info" data-toggle="popover"
+                title="Commitment:" data-content="{{entry}}">Committed</button>
+            {% endif %}
+		 </div></td>
 	      {% endfor %}
 	      </tr>
-
-{% else %}	
-	      <tr>
-	      {% for entry in item %}
-	         <td><div style="word-wrap: break-word">
-	      {% if entry.opened %} 
-				<button type="button" style="width: 120px" class="btn  btn-success" data-toggle="popover" title="Ciphertext:"
-data-content="{{entry.commitment}}">
-		   {% ifequal entry.plaintext "Voted" %}<span class="glyphicon glyphicon-ok"></span>    {% endifequal %}
-		   {% ifequal entry.plaintext "Yes" %}<span class="glyphicon glyphicon-thumbs-up"></span>    {% endifequal %}
-		   {% ifequal entry.plaintext "No" %}<span class="glyphicon glyphicon-thumbs-down"></span>    {% endifequal %}
-		   {{entry.plaintext}}</button>
-		  {% else %} 
-			{% if entry.commitment %}
-				<button style="width: 120px" type="button" class="btn  btn-danger" data-toggle="popover"
-     title="Ciphertext:" data-content="{{entry.commitment}}">Encryption</button>
-			{% endif %}
-		  {% endif %}
-		 </div></td>   
-	      {% endfor %}
-	      </tr>
-{% endif %} 
-	      {% endfor %}
+{% endfor %}
         </tbody>
        </table>
 	    
@@ -151,7 +110,6 @@ data-content="{{entry.commitment}}">
 
 	 {% endfor %}   <!-- smalldata -->  
     </div>  <!-- small-tab-content -->
-{% endfor %} <!-- bigdata -->
 </div> <!-- container -->
  
 {% endblock %}

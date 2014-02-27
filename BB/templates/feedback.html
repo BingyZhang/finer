@@ -1,0 +1,6 @@
+<select class="form-control" id="inputcode" name = "checkoption">
+    <option selected="selected">--- Select a votecode ---</option>
+    {% for c in codes %}
+    <option>{{c}}</option>
+    {% endfor %}
+</select>

@@ -51,7 +51,7 @@ def login(request):
 		else:
 			ended = False
 		elections.append({'e':e,'ended':ended})
-    return render_to_response('login.html',{'name':name, 'elist':elections, 'BB_URL':BB_URL ,'user_Paffiliation':user_Paffiliation,'user_title':user_title, 'user_Porg':user_Porg})
+    return render_to_response('login.html',{'name':name, 'elist':elections, 'BB_URL':BB_URL})
 
 
 
@@ -75,3 +75,9 @@ def test(request):
 
     return HttpResponse("Hello, "+request.META['HTTP_CAS_CN_LANG_EL'])
 
+def vote(request, eid = 0):
+    try:
+        e = Election.objects.get(EID=eid)
+    except Election.DoesNotExist:
+        return HttpResponse('The election ID is invalid!')
+    return render_to_response('vote.html',{'election':e})

@@ -28,7 +28,7 @@ class DataTriple:
         self.Ver = y
         self.Log = z
 
-col_names = ['Serial & Votecode', 'Print Check', 'Possible Votes', 'Marked As Voted', 'Predraw Summand A', 'Predraw Summand B', 'Final Summand A', 'Final Summand B']
+col_names = ['Serial Number', 'Votecode', 'Candidate Index', 'Auxiliary']
 
 col_mapping = {'SN&VC (comm)':1,	 'SN&VC (plain)':2,	 'SN&VC (decomm)':3,	 'PCheck (comm)':4,	 'PCheck (plain)':5,	 'PCheck (decomm)':6,	 'PossVote (comm)':7,	 'PossVote (plain)':8,	 'PossVote (decomm)':9,	 'MarkVoted (comm)':10,	 'MarkVoted (plain)':11,	 'MarkVoted (decomm)':12,	 'PreSumA (comm)':13,	 'PreSumA (plain)':14,	 'PreSumA (decomm)':15,	 'PreSumB (comm)':16,	 'PreSumB (plain)':17,	 'PreSumB (decomm)':18,	 'FinalSumA (comm)':19,	 'FinalSumA (plain)':20,	 'FinalSumA (decomm)':21,	 'FinalSumB (comm)':22,	 'FinalSumB (plain)':23,	 'FinalSumB (decomm)':24}
  
@@ -39,7 +39,53 @@ def empty(request):
 
 
 
+
+
 def index(request, eid = 0, tab = 0):
+    try:
+	e = Election.objects.get(EID=eid)
+    except Election.DoesNotExist:
+	return HttpResponse('The election ID is invalid!')
+    if request.method == 'POST':
+        pass
+
+    
+
+    else:
+        Vtable = []
+        #prepare ver. 1
+        table = []
+        abb_list = e.abbinit_set.all()
+        for entry in abb_list:
+            enc1 = entry.enc1.split(',')
+            enc2 = entry.enc1.split(',')
+            cipher1 = entry.cipher1.split(',')
+            cipher2 = entry.cipher2.split(',')
+            #fake aux column
+            for i in range(len(enc1)):
+                if i ==0:
+                    s = entry.serial+" A"
+                else:
+                    s = ''
+                table.append([s,enc1[i],cipher1[i],"aux"])
+            for i in range(len(enc2)):
+                if i ==0:
+                    s = entry.serial+" B"
+                else:
+                    s = ''
+                table.append([s,enc2[i],cipher2[i],"aux"])
+            
+        Vtable.append(table)
+        BigData={'Data':Vtable,'Ver':[1]} 
+        return render_to_response('abb.html', {'election':e, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
+     
+
+
+
+
+
+
+def index_bak(request, eid = 0, tab = 0):
 	try:
 		e = Election.objects.get(EID=eid)
 	except Election.DoesNotExist:
@@ -261,6 +307,7 @@ def upload(request, eid = 0):
 	enc2 = ""
 	cipher1 = ""
 	cipher2 = ""
+	n = 0
 	for temp in reader:
 	    counter+=1
 	    #first row n, k1
@@ -273,7 +320,7 @@ def upload(request, eid = 0):
 		#serial key
 		row = temp.split(',')
 		serial = row[0]
-		new_bba = Bba(election = e, serial = serial, key = row[1])
+		new_bba = Bba(election = e, serial = serial, key = row[1], n = n)
 		new_bba.save()
 	    if	counter%5 ==1:
 		#enc1
@@ -287,7 +334,12 @@ def upload(request, eid = 0):
             if  counter > 0 and counter%5 ==4:
                 #cipher2
                 cipher2 = temp
-		new_abb = Abbinit(election = e, serial = serial, enc1 = enc1, enc2 = enc2, cipher1 = cipher1, cipher2 = cipher2)
+		#random aux
+		fake_aux = []
+		for i in range(n):
+			fake_aux.append(base64.b64encode(os.urandom(8)))
+		temp = ",".join(fake_aux)
+		new_abb = Abbinit(election = e, aux1 = temp, aux2 = temp, zeroone = base64.b64encode(os.urandom(8)),serial = serial, enc1 = enc1, enc2 = enc2, cipher1 = cipher1, cipher2 = cipher2)
 		new_abb.save()
 	return HttpResponse("Success")
 

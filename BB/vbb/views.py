@@ -19,30 +19,15 @@ def send_request(e):
 def verify_code(e,s,c):
 	codelist = []
 	verified = False
-	codes = e.bba_set.filter(serial__startswith = s[:len(s)-1])
-	if len(codes) == 0:
+	try:
+		record = e.bba_set.get(serial = s)
+	except Election.DoesNotExist:
 		return codelist 	
-	for x in codes:
-		#check if voted
-		if x.voted:
-			break
-		if x.serial == s and x.code == c:
-			verified = True
-			break
-	if verified:
-		#set as voted
-		for x in codes:
-			x.voted = True
-			x.save()
-		ser = ''
-		if s[len(s)-1] == 'a':
-			ser = s[:len(s)-1]+'b'
-		else:
-			ser = s[:len(s)-1]+'a'
-		codelist.append(ser)		
-		for y in codes:
-			if y.serial == ser:
-				codelist.append(y.code)
+        key = record.key
+        #check hmac
+        for i in range(2):
+                pass 
+	
 	return codelist
 
 	
@@ -70,6 +55,10 @@ def index(request, eid = 0):
 				running = 3
 	if e.pause:
                 running = 10
+        ######################
+        #time = 99999
+	#running = 1
+	######################
 	if request.method == 'POST':#there are two posts
 		if running != 1:
 			return HttpResponse("invalid code")
@@ -85,16 +74,9 @@ def index(request, eid = 0):
 					#add the code to DB
 					new_entry = Vbb(election = e, serial = s, votecode = c)
 					new_entry.save()
-					#randomly select one code
-					r = random.SystemRandom().randint(1, len(codelist)-1)
-					#store the dual ballot
-					for i in range(1,len(codelist)):
-						ballot = Dballot(vbb = new_entry, serial = codelist[0], code = codelist[i])
-						if i == r:
-                                                        ballot.checked = True
-						ballot.save()
-					checkcode = codelist[r]
-				return HttpResponse(checkcode)
+                                        return render_to_response('feedback.html', {'codes': codelist})
+                                else:
+                                        return HttpResponse("invalid code")
 			else:
 				return HttpResponse("invalid code")
 		else:
@@ -126,6 +108,7 @@ def index(request, eid = 0):
                                         temp_row.append(' ')
 			table_data.append(temp_row)
 		progress = int(e.vbb_set.count()*100/e.total+0.5)
+
 		return render_to_response('vbb.html', {'data':table_data, 'options':options, 'time':time, 'running':running, 'election':e, 'progress':progress}, context_instance=RequestContext(request))
 
 
