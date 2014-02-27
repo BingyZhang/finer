@@ -28,7 +28,7 @@ class DataTriple:
         self.Ver = y
         self.Log = z
 
-col_names = ['Serial Number', 'Votecode', 'Candidate Index', 'Auxiliary']
+col_names = ['Serial #', 'Vote Code', 'Candidate Index', 'Pre-vote Audit', 'Vote Mark','Random Coin', 'Post-vote Audit']
 
 col_mapping = {'SN&VC (comm)':1,	 'SN&VC (plain)':2,	 'SN&VC (decomm)':3,	 'PCheck (comm)':4,	 'PCheck (plain)':5,	 'PCheck (decomm)':6,	 'PossVote (comm)':7,	 'PossVote (plain)':8,	 'PossVote (decomm)':9,	 'MarkVoted (comm)':10,	 'MarkVoted (plain)':11,	 'MarkVoted (decomm)':12,	 'PreSumA (comm)':13,	 'PreSumA (plain)':14,	 'PreSumA (decomm)':15,	 'PreSumB (comm)':16,	 'PreSumB (plain)':17,	 'PreSumB (decomm)':18,	 'FinalSumA (comm)':19,	 'FinalSumA (plain)':20,	 'FinalSumA (decomm)':21,	 'FinalSumB (comm)':22,	 'FinalSumB (plain)':23,	 'FinalSumB (decomm)':24}
  
@@ -47,8 +47,10 @@ def index(request, eid = 0, tab = 0):
     except Election.DoesNotExist:
 	return HttpResponse('The election ID is invalid!')
     if request.method == 'POST':
-        pass
-
+        response = HttpResponse(content_type="application/zip")  
+        response['Content-Disposition'] = 'attachment; filename=FINER_ABB.zip'
+        #empty zip
+        return response
     
 
     else:
@@ -59,22 +61,29 @@ def index(request, eid = 0, tab = 0):
         for entry in abb_list:
             enc1 = entry.enc1.split(',')
             enc2 = entry.enc1.split(',')
+            elen = len(enc1)
             cipher1 = entry.cipher1.split(',')
+            clen = len(cipher1)
+            rowlen = clen/elen
             cipher2 = entry.cipher2.split(',')
             #fake aux column
-            for i in range(len(enc1)):
+            aux1 = entry.aux1.split(',')
+            aux2 = entry.aux2.split(',')
+            zeroone = entry.zeroone
+            for i in range(elen):
                 if i ==0:
                     s = entry.serial+" A"
                 else:
                     s = ''
-                table.append([s,enc1[i],cipher1[i],"aux"])
-            for i in range(len(enc2)):
+                temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])    
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i]},{'cipher':temp},{'aux':aux1[i]},{},{},{}])
+            for i in range(elen):
                 if i ==0:
                     s = entry.serial+" B"
                 else:
                     s = ''
-                table.append([s,enc2[i],cipher2[i],"aux"])
-            
+                temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])     
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i]},{'cipher':temp},{'aux':aux2[i]},{},{},{}])
         Vtable.append(table)
         BigData={'Data':Vtable,'Ver':[1]} 
         return render_to_response('abb.html', {'election':e, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
@@ -337,7 +346,7 @@ def upload(request, eid = 0):
 		#random aux
 		fake_aux = []
 		for i in range(n):
-			fake_aux.append(base64.b64encode(os.urandom(8)))
+			fake_aux.append(base64.b64encode(os.urandom(16)))
 		temp = ",".join(fake_aux)
 		new_abb = Abbinit(election = e, aux1 = temp, aux2 = temp, zeroone = base64.b64encode(os.urandom(8)),serial = serial, enc1 = enc1, enc2 = enc2, cipher1 = cipher1, cipher2 = cipher2)
 		new_abb.save()
@@ -455,3 +464,4 @@ def init(request):
     
     
     
+

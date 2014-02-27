@@ -28,7 +28,7 @@
                 <h4 class="modal-title" id="myModalLabel">Export Configuration</h4>
             </div>
             <div class="modal-body">
-                <form role="form" action="http://tal.di.uoa.gr/rse/abb/12/" method="post" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>{% csrf_token %}
+                <form role="form" action="." method="post" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>{% csrf_token %}
                 <div class="form-group" align="left">
                 <div class="btn-group" data-toggle="buttons">
                     <label class="btn btn-info">
@@ -80,22 +80,22 @@
 	      {% for entry in item %}
 	         <td><div style="word-wrap: break-word">
             {% if forloop.first %}
-                {% if entry %}
+                {% if entry.serial %}
             <button style="width: 100px" type="button" class="btn btn-success" data-toggle="popover"
-     title="Commitment:" data-content="some cipher">{{entry}}</button>
+      data-content="{{entry.bit}}">{{entry.serial}}</button>
                 {% endif %}
             {% endif %}
             {% if forloop.counter = 2 %}
             <button style="width: 100px" type="button" class="btn btn-warning" data-toggle="popover"
-                title="Commitment:" data-content="{{entry}}">Committed</button>
+                 data-content="{{entry.enc}}">Committed</button>
             {% endif %}
             {% if forloop.counter = 3 %}
             <button style="width: 100px" type="button" class="btn btn-danger" data-toggle="popover"
-                title="Commitment:" data-content="{{entry}}">Encrypted</button>
+                 data-content="{{entry.cipher}}">Encrypted</button>
             {% endif %}
             {% if forloop.counter = 4 %}
             <button style="width: 100px" type="button" class="btn btn-info" data-toggle="popover"
-                title="Commitment:" data-content="{{entry}}">Committed</button>
+                 data-content="{{entry.aux}}">Committed</button>
             {% endif %}
 		 </div></td>
 	      {% endfor %}
@@ -132,5 +132,6 @@
     
 	</script>
 {% endblock %}
+
 
 

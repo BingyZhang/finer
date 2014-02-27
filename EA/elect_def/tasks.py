@@ -13,6 +13,17 @@ BB_URL = "http://tal.di.uoa.gr/finer/abb/"
 RSIZE = 32
 KSIZE = 16
 
+def addbars(code):
+        output = ''
+        for i in range(3):
+                if i != 0:
+                        output+="-"
+                output+=code[i*4:(i+1)*4]
+        return output
+def removebars(code):
+        return code[0:4]+code[5:9]+code[10:14]
+
+
 def base36encode(number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
     """Converts an integer to a base36 string."""
     if not isinstance(number, (int, long)):
@@ -90,7 +101,7 @@ def prepare_ballot(e, total, n):
                 if i > 0:
 		    codes[ab]+=","
 		    recs[ab]+=","
-	        codes[ab]+=sc1
+	        codes[ab]+=addbars(sc1)
 	        recs[ab]+=sr1
 	new_b = Ballot(election = e, serial = serial, key = skey, votes1 = votes[0],votes2 = votes[1],cipher1 = ciphers[0],cipher2 = ciphers[1], codes1 = codes[0],codes2 = codes[1],rec1 = recs[0],rec2 = recs[1])
         new_b.save()

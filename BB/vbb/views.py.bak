@@ -10,41 +10,73 @@ import datetime, cStringIO, zipfile, csv, copy,os, base64, random
 from django.core.files import File
 # Create your views here.
 
+def addbars(code):
+        output = ''
+        for i in range(3):
+                if i != 0:
+                        output+="-"
+                output+=code[i*4:(i+1)*4]
+        return output
+def removebars(code):
+        if len(code)<14:
+                return ""
+        return code[0:4]+code[5:9]+code[10:14]
+
 def empty(request):
 	return HttpResponse('Please specify the election ID.')
 
 def send_request(e):
 	return True
 
-def verify_code(e,s,c):
+def verify_code(e,s,vcode):
 	codelist = []
-	verified = False
-	codes = e.bba_set.filter(serial__startswith = s[:len(s)-1])
-	if len(codes) == 0:
-		return codelist 	
-	for x in codes:
-		#check if voted
-		if x.voted:
-			break
-		if x.serial == s and x.code == c:
-			verified = True
-			break
-	if verified:
-		#set as voted
-		for x in codes:
-			x.voted = True
-			x.save()
-		ser = ''
-		if s[len(s)-1] == 'a':
-			ser = s[:len(s)-1]+'b'
-		else:
-			ser = s[:len(s)-1]+'a'
-		codelist.append(ser)		
-		for y in codes:
-			if y.serial == ser:
-				codelist.append(y.code)
-	return codelist
-
+	receipt = ""
+	try:
+		record = e.bba_set.get(serial = s)
+	except Election.DoesNotExist:
+		return codelist,receipt
+	if record.voted:
+		return codelist,receipt
+	checkcode = removebars(vcode)
+        key = base64.b64decode(record.key)
+        n = record.n
+        #check hmac
+        codes1 = []
+        codes2 = []
+        rec1 = []
+        rec2 = []
+        for i in range(n):
+                message = bytes(s+"0"+str(i)).encode('utf-8') 
+                c = hmac.new(key, message, digestmod=hashlib.sha256).digest()
+	        c1 = long(binascii.hexlify(c[0:8]), 16) #convert 64 bit string to long
+	        c1 &= 0x3fffffffffffffff # 64 --> 62 bits
+	        codes1.append(base36encode(c1))
+	        r1 = long(binascii.hexlify(c[8:12]), 16) #convert 32 bit string to long
+                r1 &= 0x7fffffff # 32 --> 31 bits
+                rec1.append(base36encode(r1))
+                #ballot 2
+                message = bytes(s+"1"+str(i)).encode('utf-8') 
+                c = hmac.new(key, message, digestmod=hashlib.sha256).digest()
+	        c2 = long(binascii.hexlify(c[0:8]), 16) #convert 64 bit string to long
+	        c2 &= 0x3fffffffffffffff # 64 --> 62 bits
+	        codes2.append(base36encode(c2))
+	        r2 = long(binascii.hexlify(c[8:12]), 16) #convert 32 bit string to long
+                r2 &= 0x7fffffff # 32 --> 31 bits
+                rec2.append(base36encode(r2))
+	for i in range(n):
+                if codes1[i] == checkcode:
+                        codelist = codes2
+                        receipt = rec1[i]
+                       # record.voted = True
+                       # record.save()
+                        break
+                if codes2[i] == checkcode:
+                        codelist = codes1
+                        receipt = rec2[i]
+                       # record.voted = True
+                       # record.save()
+                        break       
+	return (codelist,receipt)
 	
 def index(request, eid = 0):
 	try:
@@ -80,21 +112,15 @@ def index(request, eid = 0):
 				c = form.cleaned_data.get('code').lower()#request.POST['code']
 				if len(s) == 0 or len(c) ==0:
 					return HttpResponse("invalid code")
-				codelist = verify_code(e,s,c)
-				if len(codelist) != 0:
+				codelist,receipt = verify_code(e,s,c)
+				if receipt != "":
 					#add the code to DB
 					new_entry = Vbb(election = e, serial = s, votecode = c)
 					new_entry.save()
-					#randomly select one code
-					r = random.SystemRandom().randint(1, len(codelist)-1)
-					#store the dual ballot
-					for i in range(1,len(codelist)):
-						ballot = Dballot(vbb = new_entry, serial = codelist[0], code = codelist[i])
-						if i == r:
-                                                        ballot.checked = True
-						ballot.save()
-					checkcode = codelist[r]
-				return HttpResponse(checkcode)
+					return HttpResponse("Success")
+                                       # return render_to_response('feedback.html', {'codes': codelist})
+                                else:
+                                        return HttpResponse("invalid code")
 			else:
 				return HttpResponse("invalid code")
 		else:
@@ -126,6 +152,7 @@ def index(request, eid = 0):
                                         temp_row.append(' ')
 			table_data.append(temp_row)
 		progress = int(e.vbb_set.count()*100/e.total+0.5)
+
 		return render_to_response('vbb.html', {'data':table_data, 'options':options, 'time':time, 'running':running, 'election':e, 'progress':progress}, context_instance=RequestContext(request))
 
 

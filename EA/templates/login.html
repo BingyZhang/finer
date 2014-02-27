@@ -19,6 +19,9 @@
 <div class="container">
     <div align="left" class="highlight">
         <h2>Hello {{name}},</h2>
+	<p>{{a}}</p>
+	<p>{{b}}</p>
+	<p>{{c}}</p>
         <h2>You are eligible for the following election(s):</h2>
         {% for entry in elist %}
         <p><font size="4">Election {{forloop.counter}}:  </font>      <a class="btn btn-large {% if entry.ended %}btn-warning" disabled="disabled"{% else %}btn-success"{% endif %} type="button"

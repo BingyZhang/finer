@@ -2,7 +2,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, render
 from django.http import HttpResponse, HttpResponseRedirect
 from crypto import commitment
-import time, requests, hashlib
+import time, requests, hashlib,subprocess
 from datetime import datetime
 from elect_def.forms import DefForm
 from elect_def.models import Election, Choice
@@ -101,6 +101,17 @@ def index(request):
 	VBB_url = BB_URL+"vbb/"+eid+"/"
         ABB_url = BB_URL+"abb/"+eid+"/"
         email = request.META['HTTP_CAS_MAIL']
+	#send email
+	en_name = request.META['HTTP_CAS_CN']
+	emailbody = "Hello "+en_name+",\n The following election is created.\n"
+	emailbody+= "\n".join(data)
+	emailbody+= "\nVBB_url: "+VBB_url+"\n"
+	emailbody+= "ABB_url: "+ABB_url+"\n"
+    	emailbody+= "\nFINER Ballot Distribution Server\n"
+
+    	#send email         
+    	p = subprocess.Popen(["sudo","/home/bingsheng/bingmail.sh","Election Definition "+eid, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	output,err = p.communicate()
 	#celery prepare ballots
 	prepare_ballot.delay(new_e, int(total)+1,len(opts))
         return render_to_response('confirm.html',{'name':name,'data':data, 'email':email,'VBB':VBB_url,'ABB':ABB_url})
