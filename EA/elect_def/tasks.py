@@ -20,11 +20,11 @@ def addbars(code):
                         output+="-"
                 output+=code[i*4:(i+1)*4]
         return output
+
 def removebars(code):
-        return code[0:4]+code[5:9]+code[10:14]
+        return code[0:4]+code[5:9]+code[10:len(code)]
 
-
-def base36encode(number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
+def base36encode(number, alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
     """Converts an integer to a base36 string."""
     if not isinstance(number, (int, long)):
         raise TypeError('number must be an integer')
@@ -63,7 +63,7 @@ def decrypt(ciphertext, key):
 def prepare_ballot(e, total, n):
     #print "test...creating ballot.."
     #create ballots
-    for v in range(1,total):
+    for v in range(100,total+100):
         serial = str(v)
         key = os.urandom(RSIZE)
 	skey = base64.b64encode(key)

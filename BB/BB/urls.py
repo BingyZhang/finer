@@ -9,5 +9,5 @@ urlpatterns = patterns('',
     url(r'^vbb/', include('vbb.urls')),
     url(r'^abb/', include('abb.urls')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^def/', 'abb.views.init'),                   
+    url(r'^def/', 'abb.views.init'),
 ) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

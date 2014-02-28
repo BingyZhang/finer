@@ -10,7 +10,7 @@
 {% block content %}
 
       <div class="container">
-        <h2>{{election.question}}</h2>
+        <h2><font color="purple">{{election.question}}</font></h2>
 		<p><div class="btn-group">
   			<button type="button" class="btn btn-default" disabled="disabled">Start time: {{election.start}}</button>
   			<button type="button" class="btn btn-default" disabled="disabled">End time: {{election.end}}</button>
@@ -127,16 +127,16 @@
         </div>
         <div id="collapseOne" class="panel-collapse collapse">
             <div class="panel-body">
-                <form role="form" action="" method="post" id="formvote" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
+                <form role="form" action="{{bb_url}}/vbb/{{election.EID}}/client/" method="post" id="formvote1" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
                 <div class="btn-group" data-toggle="buttons">
-			{% for opt in options %}
+			{% for opt in c1 %}
 			<label class="btn btn-lg btn-info">
-                        <input type="radio" name="options" id="bone{{forloop.counter}}"> {{opt}}
+                        <input type="radio" name="options1" value="{{opt.0}}"> {{opt.1}}
                         </label>
                         {% endfor %}
                 </div>
                 <div align="right">
-                <button type="submit" id="submitvote" class="btn btn-success">Submit</button>
+                <button type="submit" id="submitvote1" class="btn btn-success">Submit</button>
                 </div>
                 </form>
             </div>
@@ -152,25 +152,24 @@
         </div>
         <div id="collapseTwo" class="panel-collapse collapse">
             <div class="panel-body">
-		<form role="form" action="" method="post" id="formvote" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
+		<form role="form" action="{{bb_url}}/vbb/{{election.EID}}/client/" method="post" id="formvote2" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
                 <div class="btn-group" data-toggle="buttons">
-                        {% for opt in options %}
+                        {% for opt in c2 %}
                         <label class="btn btn-lg btn-info">
-                        <input type="radio" name="options" id="bone{{forloop.counter}}"> {{opt}}
+                        <input type="radio" name="options2" id="{{opt.0}}"> {{opt.1}}
                         </label>
                         {% endfor %}
                 </div>
                 <div align="right">
-                <button type="submit" id="submitvote" class="btn btn-success">Submit</button>
+                <button type="submit" id="submitvote2" class="btn btn-success">Submit</button>
                 </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
-
 </div> <!-- /container -->
+
 {% endblock %}
 
 {% block afterbody %}
@@ -178,10 +177,10 @@
 <script type="text/javascript">
 	$(document).ready(function(){
 
-		$("#formvote").submit(function(){
-			$.post("",
-			{serial:$( "#voteserial" ).val(),
-			code:$( "#votecode" ).val(),
+		$("#formvote1").submit(function(){
+			$.post("{{bb_url}}/vbb/{{election.EID}}/client/",
+			{serial:{{serial}}
+			code:$('input[name="options1"]:checked').val(),
 			csrfmiddlewaretoken:'{{ csrf_token }}'
 			},
 			function(data,status){
@@ -199,6 +198,35 @@
 			});
 			return false;
 		});
+
+
+
+
+                $("#formvote2").submit(function(){
+                        $.post("{{bb_url}}/vbb/{{election.EID}}/client/",
+                        {serial:{{serial}}
+                        code:$('input[name="options2"]:checked').val(),
+                        csrfmiddlewaretoken:'{{ csrf_token }}'
+                        },
+                        function(data,status){
+                                if(data == "invalid code"){
+                                        $('#invalidModal').modal('show');
+                                }
+                                else {
+                                        $('#inputcode').replaceWith('<input type="text" id="inputcode"  readonly="true" name = "checkcode" class="form-control" value="'+data+'">');
+                                        $('#feedbackModal').modal('show');
+                                        }
+                        })
+                        .fail(function(xhr) {
+                                console.log("Error: " + xhr.statusText);
+                                alert("Error: " + xhr.statusText);
+                        });
+                        return false;
+                });
+
+
+
+
 	});
 </script>
 {% endblock %}

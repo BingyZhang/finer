@@ -7,12 +7,31 @@ from datetime import datetime
 from django.template import RequestContext
 from vbb.models import Election,Choice,Randomstate,Bba
 from Crypto.Cipher import AES
+from Crypto import Random
 from django.utils import timezone
 from abb.models import AbbKey,AbbData, UpdateInfo, Auxiliary,Abbinit
 import cStringIO, zipfile, csv, copy,os, base64, random
 from django.core.files import File
 
 # Create your views here.
+
+def pad(s):
+    return s + b"\0" * (AES.block_size - len(s) % AES.block_size)
+
+def encrypt(message, key, key_size=256):
+    message = pad(message)
+    iv = Random.new().read(AES.block_size)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    return iv + cipher.encrypt(message)
+
+def decrypt(ciphertext, key):
+    iv = ciphertext[:AES.block_size]
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    plaintext = cipher.decrypt(ciphertext[AES.block_size:])
+    return plaintext.rstrip(b"\0")
+
+
+
 
 #used to create tabs in html template
 class Ctuple:
@@ -56,6 +75,7 @@ def index(request, eid = 0, tab = 0):
     else:
         Vtable = []
         #prepare ver. 1
+	version = [1]
         table = []
         abb_list = e.abbinit_set.all()
         for entry in abb_list:
@@ -76,16 +96,59 @@ def index(request, eid = 0, tab = 0):
                 else:
                     s = ''
                 temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])    
-                table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i]},{'cipher':temp},{'aux':aux1[i]},{},{},{}])
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':""},{'cipher':temp},{'aux':aux1[i]},{'mark':""},{'rand':""},{}])
             for i in range(elen):
                 if i ==0:
                     s = entry.serial+" B"
                 else:
                     s = ''
                 temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])     
-                table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i]},{'cipher':temp},{'aux':aux2[i]},{},{},{}])
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':""},{'cipher':temp},{'aux':aux2[i]},{'mark':""},{'rand':""},{}])
         Vtable.append(table)
-        BigData={'Data':Vtable,'Ver':[1]} 
+	if e.tally:# ver. 2
+	    version.append(2)
+	    table = []
+            for entry in abb_list:
+            	enc1 = entry.enc1.split(',')
+            	enc2 = entry.enc1.split(',')
+            	elen = len(enc1)
+            	cipher1 = entry.cipher1.split(',')
+            	clen = len(cipher1)
+            	rowlen = clen/elen
+            	cipher2 = entry.cipher2.split(',')
+            	#fake aux column
+            	aux1 = entry.aux1.split(',')
+            	aux2 = entry.aux2.split(',')
+		rand1 = entry.rand1.split(',')
+		rand2 = entry.rand2.split(',')
+		code1 = entry.codes1.split(',')
+                code2 = entry.codes2.split(',')
+		if entry.mark1:
+		    mark1 = entry.mark1.split(',')
+		else:
+		    mark1 = [""]*elen
+		if entry.mark2:
+		    mark2 = entry.mark2.split(',')
+		else:
+                    mark2 = [""]*elen
+            	zeroone = entry.zeroone
+            	for i in range(elen):
+                    if i ==0:
+                    	s = entry.serial+" A"
+                    else:
+                    	s = ''
+                    temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])
+                    table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':code1[i]},{'cipher':temp},{'aux':aux1[i]},{'mark':mark1[i]},{'rand':rand1[i]},{}])
+                for i in range(elen):
+                    if i ==0:
+                        s = entry.serial+" B"
+                    else:
+                        s = ''
+                    temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])
+                    table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':code2[i]},{'cipher':temp},{'aux':aux2[i]},{'mark':mark2[i]},{'rand':rand2[i]},{}])
+            Vtable.append(table)
+	#end of verion 2
+        BigData={'Data':Vtable,'Ver':version} 
         return render_to_response('abb.html', {'election':e, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
      
 
@@ -316,14 +379,18 @@ def upload(request, eid = 0):
 	enc2 = ""
 	cipher1 = ""
 	cipher2 = ""
+	code1 = []
+	code2 = []
 	n = 0
+	key = ""
 	for temp in reader:
 	    counter+=1
 	    #first row n, k1
 	    if counter ==-1:
 		row = temp.split(',')
 	        n = int(row[0])
-	        new_r = Randomstate(election = e, notes = "k1",random = row[1])
+		key = row[1]
+	        new_r = Randomstate(election = e, notes = "k1",random = key)
 	        new_r.save()
 	    if counter%5 ==0:
 		#serial key
@@ -334,21 +401,32 @@ def upload(request, eid = 0):
 	    if	counter%5 ==1:
 		#enc1
 		enc1 = temp
+		row = temp.split(',')
+		k = base64.b64decode(key)
+		for item in row:
+		    code1.append(decrypt(base64.b64decode(item),k))
             if  counter%5 ==2:
                 #cipher1
                 cipher1 = temp	
             if  counter%5 ==3:
                 #enc2
                 enc2 = temp    
+                row = temp.split(',')
+                k = base64.b64decode(key)
+                for item in row:
+                    code2.append(decrypt(base64.b64decode(item),k))
             if  counter > 0 and counter%5 ==4:
                 #cipher2
                 cipher2 = temp
 		#random aux
 		fake_aux = []
+		fake_rand = []
 		for i in range(n):
 			fake_aux.append(base64.b64encode(os.urandom(16)))
-		temp = ",".join(fake_aux)
-		new_abb = Abbinit(election = e, aux1 = temp, aux2 = temp, zeroone = base64.b64encode(os.urandom(8)),serial = serial, enc1 = enc1, enc2 = enc2, cipher1 = cipher1, cipher2 = cipher2)
+			fake_rand.append(base64.b64encode(os.urandom(16)))
+		temp1 = ",".join(fake_aux)
+		temp2 = ",".join(fake_rand)
+		new_abb = Abbinit(election = e, codes1 = ",".join(code1), codes2 = ",".join(code2), rand1 = temp2, rand2 = temp2 , aux1 = temp1, aux2 = temp1, zeroone = base64.b64encode(os.urandom(8)),serial = serial, enc1 = enc1, enc2 = enc2, cipher1 = cipher1, cipher2 = cipher2)
 		new_abb.save()
 	return HttpResponse("Success")
 

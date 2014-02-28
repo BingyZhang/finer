@@ -58,3 +58,7 @@ class Abbinit(models.Model):
     aux1 = models.TextField(null=True, blank=True)
     aux2 = models.TextField(null=True, blank=True)
     zeroone = models.TextField(null=True, blank=True)
+    mark1 = models.TextField(null=True, blank=True)
+    mark2 = models.TextField(null=True, blank=True)
+    rand1 = models.TextField(null=True, blank=True)
+    rand2 = models.TextField(null=True, blank=True)

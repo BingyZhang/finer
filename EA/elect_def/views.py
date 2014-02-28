@@ -15,7 +15,7 @@ from tasks import prepare_ballot
 
 BB_URL = "http://tal.di.uoa.gr/finer/"
 
-def base36encode(number, alphabet='0123456789abcdefghijklmnopqrstuvwxyz'):
+def base36encode(number, alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
     """Converts an integer to a base36 string."""
     if not isinstance(number, (int, long)):
         raise TypeError('number must be an integer')
@@ -107,7 +107,7 @@ def index(request):
 	emailbody+= "\n".join(data)
 	emailbody+= "\nVBB_url: "+VBB_url+"\n"
 	emailbody+= "ABB_url: "+ABB_url+"\n"
-    	emailbody+= "\nFINER Ballot Distribution Server\n"
+    	emailbody+= "\nFINER  Election Authority\n"
 
     	#send email         
     	p = subprocess.Popen(["sudo","/home/bingsheng/bingmail.sh","Election Definition "+eid, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)

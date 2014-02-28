@@ -4,48 +4,173 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
 from vbb.forms import VoteForm, FeedbackForm
 from vbb.models import Vbb, Dballot, Election, Choice, Bba
-from abb.models import UpdateInfo
+from abb.models import UpdateInfo,Abbinit
 from django.utils import timezone
-import datetime, cStringIO, zipfile, csv, copy,os, base64, random
+import datetime, cStringIO, zipfile, csv, copy,os, base64, random,hmac,hashlib,binascii,subprocess
 from django.core.files import File
+from tasks import add
 # Create your views here.
+
+def addbars(code):
+        output = ''
+        for i in range(3):
+                if i != 0:
+                        output+="-"
+                output+=code[i*4:(i+1)*4]
+        return output
+
+def removebars(code):
+        return code[0:4]+code[5:9]+code[10:len(code)]
+
+def base36encode(number, alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
+    """Converts an integer to a base36 string."""
+    if not isinstance(number, (int, long)):
+        raise TypeError('number must be an integer')
+    base36 = ''
+    sign = ''
+    if number < 0:
+        sign = '-'
+        number = -number
+    if 0 <= number < len(alphabet):
+        return sign + alphabet[number]
+    while number != 0:
+        number, i = divmod(number, len(alphabet))
+        base36 = alphabet[i] + base36
+    return sign + base36
+
+def base36decode(number):
+    return int(number, 36)
+
 
 def empty(request):
 	return HttpResponse('Please specify the election ID.')
 
 def send_request(e):
-	return True
-
-def verify_code(e,s,c):
+	#tally
+	votes = e.vbb_set.all()
+	opts = e.choice_set.all()
+	n = len(opts)
+	#get all for fast disk IO
+	abbs = e.abbinit_set.all()
+	opt_ciphers = [[]]*n#ElGamal
+        #prepare the table_data
+        for each in votes:
+		feedback = each.dballot_set.filter(checked = True)
+                record = abbs.get(serial = each.serial)
+		codes1 = record.codes1.split(',')
+		codes2 = record.codes2.split(',')
+		cipher1 =record.cipher1.split(',')
+		cipher2 = record.cipher2.split(',')
+		mark1 = []
+		mark2 = []
+		for i in range(len(codes1)):
+			if each.votecode == codes1[i]:
+				mark1.append("Voted")
+				#2n*i to 2n*(i+1)-1 put ciphers
+				for j in range(n):
+					temp = cipher1[2*n*i+2*j].split(' ')
+					for t in temp:
+						opt_ciphers[j].append(t)
+                                        temp = cipher1[2*n*i+2*j+1].split(' ')
+                                        for t in temp:
+                                                opt_ciphers[j].append(t)				
+			else:
+				mark1.append("")
+		for i in range(len(codes2)):
+                        if each.votecode == codes2[i]:
+                                mark2.append("Voted")
+                                #2n*i to 2n*(i+1)-1 put ciphers
+                                for j in range(n):
+                                        temp = cipher2[2*n*i+2*j].split(' ')
+                                        for t in temp:
+                                                opt_ciphers[j].append(t)
+					temp = cipher2[2*n*i+2*j+1].split(' ')
+                                        for t in temp:
+                                                opt_ciphers[j].append(t)
+                        else:
+                                mark2.append("")
+		#mark feedbacks
+                if len(feedback)!=0:
+			for feed in feedback:
+				for i in range(len(codes1)):
+                        		if feed.code == codes1[i]:
+						mark1[i] = feed.value
+				for i in range(len(codes2)):
+                                        if feed.code == codes2[i]:
+                                                mark2[i] = feed.value
+		#store marks
+		record.mark1 = ",".join(mark1)
+		record.mark2 = ",".join(mark2)
+		record.save()
+	#output for tally
+	for i in range(n):
+		temp_str = "\n".join(opt_ciphers[i])
+		#f = open('/var/www/finer/EC-ElGamal/Tally.txt', 'w')
+		#f.write(temp_str)
+		#f.close
+		p = subprocess.Popen(["sh","/var/www/finer/EC-ElGamal/Tally.sh",temp_str],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	    	output,err = p.communicate()
+		opts[i].votes = int(output)
+		opts[i].save()
+	#store result
+	e.tally = True
+	e.save()
+def verify_code(e,s,vcode):
 	codelist = []
-	verified = False
-	codes = e.bba_set.filter(serial__startswith = s[:len(s)-1])
-	if len(codes) == 0:
-		return codelist 	
-	for x in codes:
-		#check if voted
-		if x.voted:
-			break
-		if x.serial == s and x.code == c:
-			verified = True
-			break
-	if verified:
-		#set as voted
-		for x in codes:
-			x.voted = True
-			x.save()
-		ser = ''
-		if s[len(s)-1] == 'a':
-			ser = s[:len(s)-1]+'b'
-		else:
-			ser = s[:len(s)-1]+'a'
-		codelist.append(ser)		
-		for y in codes:
-			if y.serial == ser:
-				codelist.append(y.code)
-	return codelist
+	templist = []
+	receipt = ""
+	try:
+		record = e.bba_set.get(serial = s)
+	except Bba.DoesNotExist:
+		return codelist,receipt
+	if record.voted:
+		return codelist,receipt
+	checkcode = removebars(vcode)
+        key = base64.b64decode(record.key)
+        n = record.n
+        #check hmac
+        codes1 = []
+        codes2 = []
+        rec1 = []
+        rec2 = []
+	#return codelist,str(n)
+        for i in range(n):
+                message = bytes(s+str(0)+str(i)).encode('utf-8') 
+                c = hmac.new(key, message, digestmod=hashlib.sha256).digest()
+	        c1 = long(binascii.hexlify(c[0:8]), 16) #convert 64 bit string to long
+	        c1 &= 0x3fffffffffffffff # 64 --> 62 bits
+	        codes1.append(base36encode(c1))
+	        r1 = long(binascii.hexlify(c[8:12]), 16) #convert 32 bit string to long
+                r1 &= 0x7fffffff # 32 --> 31 bits
+                rec1.append(base36encode(r1))
+                #ballot 2
+                message = bytes(s+str(1)+str(i)).encode('utf-8') 
+                c = hmac.new(key, message, digestmod=hashlib.sha256).digest()
+	        c2 = long(binascii.hexlify(c[0:8]), 16) #convert 64 bit string to long
+	        c2 &= 0x3fffffffffffffff # 64 --> 62 bits
+	        codes2.append(base36encode(c2))
+	        r2 = long(binascii.hexlify(c[8:12]), 16) #convert 32 bit string to long
+                r2 &= 0x7fffffff # 32 --> 31 bits
+                rec2.append(base36encode(r2))
+	for i in range(n):
+                if codes1[i] == checkcode:
+                        templist = codes2
+                        receipt = rec1[i]
+                        record.voted = True
+                        record.save()
+                        break
+                if codes2[i] == checkcode:
+                        templist = codes1
+                        receipt = rec2[i]
+                        record.voted = True
+                        record.save()
+                        break
+	for x in templist:
+		codelist.append(addbars(x))       
+	return codelist,receipt
 
-	
+
+
 def index(request, eid = 0):
 	try:
 		e = Election.objects.get(EID=eid)
@@ -76,39 +201,38 @@ def index(request, eid = 0):
 		if request.is_ajax():#ajax post
 			form = VoteForm(request.POST) # A form bound to the POST data
 			if form.is_valid(): # All validation rules pass
-				s = form.cleaned_data.get('serial').lower()#request.POST['serial']
-				c = form.cleaned_data.get('code').lower()#request.POST['code']
+				s = form.cleaned_data.get('serial').upper()#request.POST['serial']
+				c = form.cleaned_data.get('code').upper()#request.POST['code']
 				if len(s) == 0 or len(c) ==0:
 					return HttpResponse("invalid code")
-				codelist = verify_code(e,s,c)
-				if len(codelist) != 0:
+				codelist,receipt = verify_code(e,s,c)
+				if receipt != "":
 					#add the code to DB
 					new_entry = Vbb(election = e, serial = s, votecode = c)
 					new_entry.save()
-					#randomly select one code
-					r = random.SystemRandom().randint(1, len(codelist)-1)
 					#store the dual ballot
-					for i in range(1,len(codelist)):
-						ballot = Dballot(vbb = new_entry, serial = codelist[0], code = codelist[i])
-						if i == r:
-                                                        ballot.checked = True
-						ballot.save()
-					checkcode = codelist[r]
-				return HttpResponse(checkcode)
+					for i in range(len(codelist)):
+						balls = Dballot(vbb = new_entry, serial = s, code = codelist[i])
+						balls.save()
+					#return HttpResponse(receipt)
+                                        return render_to_response('feedback.html', {'codes': codelist,'options':options,'rec':receipt}, context_instance=RequestContext(request))
+                                else:
+                                        return HttpResponse("invalid code")
 			else:
 				return HttpResponse("invalid code")
 		else:
 			form = FeedbackForm(request.POST) # A form bound to the POST data
 			if form.is_valid(): # All validation rules pass
-				ic = form.cleaned_data.get('checkcode').lower()
+				ic = form.cleaned_data.get('checkcode')				
 				io = form.cleaned_data.get('checkoption') #request.POST['checkoption']
-				if io != '--- Select an option ---':
-                                        ballot = Dballot.objects.get(code = ic)
-                                        ballot.value = io
-                                        ballot.save()
+				if "Select" not in io and "Select" not in ic:# good feedback
+                                        ball = Dballot.objects.get(code = ic)
+                                        ball.value = io
+					ball.checked = True
+                                        ball.save()
 				return render_to_response('thanks.html')
 			else:
-				return HttpResponse("invalid code")
+				return HttpResponse("Wrong Form")
 	else:# no post
 		data = e.vbb_set.all().order_by('-date')
 		#prepare the table_data
@@ -118,14 +242,16 @@ def index(request, eid = 0):
 			temp_row.append(item.votecode)
 			temp_row.append(item.date)
 			unused = item.dballot_set.filter(checked = True)
-			for u in unused:
-                                temp_row.append(u.code)
-                                if u.value:
-					temp_row.append(u.value)
-				else:
-                                        temp_row.append(' ')
+			if len(unused)==0:
+			    temp_row.append("")
+			    temp_row.append("")			
+
+			else:
+                            temp_row.append(unused[0].code)
+			    temp_row.append(unused[0].value)
 			table_data.append(temp_row)
 		progress = int(e.vbb_set.count()*100/e.total+0.5)
+
 		return render_to_response('vbb.html', {'data':table_data, 'options':options, 'time':time, 'running':running, 'election':e, 'progress':progress}, context_instance=RequestContext(request))
 
 
@@ -147,11 +273,33 @@ def export(request, eid = 0):
                 dballs = item.dballot_set.all()
                 for d in dballs:
                         if d.value:
-                                writerA.writerow([d.serial, 'check',d.code+'-'+d.value])
+                                writerA.writerow([d.serial, 'check',d.code+' : '+d.value])
         z.writestr("Votes.csv", output.getvalue())  ## write votes csv file to zip
         # fake signature
         z.writestr("Sig_Votes.txt", "Fake signature. This CSV file is signed by the VBB.")  ## write signature to zip
         return response
+
+
+@csrf_exempt
+def client(request, eid = 0):
+    try:
+	e = Election.objects.get(EID=eid)
+    except Election.DoesNotExist:
+	return HttpResponse('The election ID is invalid!')
+    if request.method == 'POST':
+	return HttpResponse(request.POST['serial'])	
+
+    	return HttpResponse('Got it.')                
+        
+        
+    else:
+        return render_to_response('404.html')
+
+
+
+
+
+
 
 
 @csrf_exempt
@@ -186,7 +334,7 @@ def upload(request, eid = 0):
                 for rows in reader:
                         if rows != '':
                                 items = rows.split(',')
-                                new_entry = Bba(election = e, serial = items[0].strip().lower(), code = items[1].strip().lower())
+                                new_entry = Bba(election = e, serial = items[0].strip().upper(), code = items[1].strip().upper())
                                 new_entry.save()
                 return HttpResponse('The votecodes have been uploaded to VBB.')                
         elif opfile == 'end':

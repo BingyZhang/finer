@@ -75,6 +75,7 @@ def test(request):
 
     return HttpResponse("Hello, "+request.META['HTTP_CAS_CN_LANG_EL'])
 
+
 def vote(request, eid = 0):
     try:
         e = Election.objects.get(EID=eid)
@@ -106,26 +107,31 @@ def vote(request, eid = 0):
     #get codes and options
     codes1 = b.codes1.split(',')
     codes2 = b.codes2.split(',')
+    rec1 = b.rec1.split(',')
+    rec2 = b.rec2.split(',')
     perm1 = b.votes1.split(',')
     perm2 = b.votes2.split(',')
     #sort according to perm1
-    sorted1 = [x for (y,x) in sorted(zip(perm1,codes1))]
-    sorted2 = [x for (y,x) in sorted(zip(perm2,codes2))]
-    ballot1 = zip(sorted1,opts)
-    ballot2 = zip(sorted2,opts)
+    sorted1 = sorted(zip(perm1,codes1,rec1))
+    sorted2 = sorted(zip(perm2,codes2,rec2))
+    ballot_code1 = [y for (x,y,z) in sorted1]
+    ballot_code2 = [y for (x,y,z) in sorted2]
+    ballot_rec1 = [z for (x,y,z) in sorted1]
+    ballot_rec2 = [z for (x,y,z) in sorted2]
+
     #only send email for the first time
     if first_time:	
     	#there is something wrong with Greek name
     	en_name = request.META['HTTP_CAS_CN']
     	emailbody = "Hello "+en_name+",\nHere is your ballot.\n"
-	emailbody+= "==========================================\nSerial Number: "+b.serial+"\n"
-	emailbody+= "==========================================\nBallot A: \n"
+	emailbody+= "================================================\nSerial Number: "+b.serial+"\n"
+	emailbody+= "================================================\nBallot A: \n"
 	for i in range(len(options)):
-		emailbody+= sorted1[i]+"   "+opts[i]+"\n"
-        emailbody+= "==========================================\nBallot B: \n"
+		emailbody+= "Votecode: "+ballot_code1[i]+"  Receipt: "+ballot_rec1[i]+ "  Option: "+opts[i]+"\n"
+        emailbody+= "================================================\nBallot B: \n"
         for i in range(len(options)):
-                emailbody+= sorted2[i]+"   "+opts[i]+"\n"
-	emailbody+= "==========================================\n"
+                emailbody+= "Votecode: "+ballot_code2[i]+"  Receipt: "+ballot_rec2[i]+ "  Option: "+opts[i]+"\n"
+	emailbody+= "================================================\n"
     	emailbody+= "\nVBB_url: "+ABB_URL+"/vbb/"+eid+"/\n"
     	emailbody+= "ABB_url: "+ABB_URL+"/abb/"+eid+"/\n"
     	emailbody+= "\nFINER Ballot Distribution Server\n"
@@ -134,6 +140,4 @@ def vote(request, eid = 0):
     	output,err = p.communicate()
 
 
-
-
-    return render_to_response('vote.html',{'options':opts, 'time':time, 'running':running, 'election':e, 'name':name, 'email':email})
+    return render_to_response('vote.html',{'bb_url':ABB_URL, 'serial':b.serial , 'time':time, 'running':running, 'election':e, 'name':name, 'email':email,'c1':zip(ballot_code1,opts),'c2':zip(ballot_code2,opts)}, context_instance=RequestContext(request))
