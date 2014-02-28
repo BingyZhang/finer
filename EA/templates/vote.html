@@ -38,7 +38,7 @@
 			</script>
 		{% endif %}
 		{% if running == 2 %}
-			<button type="button" class="btn btn-danger btn-lg" disabled="disabled"><span class="glyphicon glyphicon-stats"></span> The election ended. Waiting for tally results...</button>
+			<button type="button" class="btn btn-danger btn-lg" disabled="disabled"><span class="glyphicon glyphicon-stats"></span> The election ended, and the tally result was published on VBB.</button>
 		{% endif %}
 		{% if running == 10 %}
 			<button type="button" class="btn btn-warning btn-lg" disabled="disabled"><span class="glyphicon glyphicon-lock"></span> The election is currently locked.</button>
@@ -74,43 +74,6 @@
   </div><!-- /.modal -->
 
 
-<!-- Modal -->
-  <div class="modal fade" id="feedbackModal">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title"><span class="glyphicon glyphicon-ok-sign"></span> Your vote is accepted!</h4>
-        </div>
-        <div class="modal-body">
-		<p>Could you please identify that the following code is included in your dual ballot and select its corresponding option for us?</p>	
-		<form class="form-horizontal" role="form"action="" method="post" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>{% csrf_token %}
-		<div class="form-group">
-		<label for="inputcode" class="col-sm-2 control-label">Code: </label>
-		<div class="col-sm-10">
-		<input type="text" id="inputcode" name = "checkcode"  readonly="true" class="form-control" value="checkcode">
-		</div>
-		</div>
-		<div class="form-group">
-		<label for="inputoption" class="col-sm-2 control-label">Option: </label>
-		<div class="col-sm-10">
-		<select class="form-control" id="inputoption" name = "checkoption">
- 			<option selected="selected">--- Select an option ---</option>
-			{% for opt in options %}  			
-			<option>{{opt}}</option>
-  			{% endfor %}
-		</select>
-		</div>
-		</div>
-		<div class="form-group" align="right">
-		<button type="submit" class="btn btn-primary" >Submit</button>
-		</div>
-		</form>
-        </div>
-      </div><!-- /.modal-content -->
-    </div><!-- /.modal-dialog -->
-  </div><!-- /.modal -->
-
 
 <div class="container">
 <h2>Hello {{name}},</h2>
@@ -128,13 +91,19 @@
         <div id="collapseOne" class="panel-collapse collapse">
             <div class="panel-body">
                 <form role="form" action="{{bb_url}}/vbb/{{election.EID}}/client/" method="post" id="formvote1" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
-                <div class="btn-group" data-toggle="buttons">
+			<input type="hidden" name="serial" value="{{serial}}"/>
+			{% for opt in c2 %}
+                        <input type="hidden" name="feedback{{forloop.counter}}" value="{{opt.0}},{{opt.1}}"/>
+                        {% endfor %}
+
+			<div class="btn-group" data-toggle="buttons">
 			{% for opt in c1 %}
 			<label class="btn btn-lg btn-info">
-                        <input type="radio" name="options1" value="{{opt.0}}"> {{opt.1}}
-                        </label>
+                        <input type="radio" id="opt1{{forloop.counter}}" name="options" value="{{opt.0}}"/> {{opt.1}}
+			</label>
                         {% endfor %}
-                </div>
+			</div>
+			
                 <div align="right">
                 <button type="submit" id="submitvote1" class="btn btn-success">Submit</button>
                 </div>
@@ -153,10 +122,14 @@
         <div id="collapseTwo" class="panel-collapse collapse">
             <div class="panel-body">
 		<form role="form" action="{{bb_url}}/vbb/{{election.EID}}/client/" method="post" id="formvote2" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
+			<input type="hidden" name="serial" value="{{serial}}">
+                        {% for opt in c1 %}
+                        <input type="hidden" name="feedback{{forloop.counter}}" value="{{opt.0}},{{opt.1}}"/>         
+                        {% endfor %}
                 <div class="btn-group" data-toggle="buttons">
                         {% for opt in c2 %}
                         <label class="btn btn-lg btn-info">
-                        <input type="radio" name="options2" id="{{opt.0}}"> {{opt.1}}
+                        <input type="radio" id="opt2{{forloop.counter}}" name="options" value="{{opt.0}}"/> {{opt.1}}
                         </label>
                         {% endfor %}
                 </div>
@@ -173,62 +146,6 @@
 {% endblock %}
 
 {% block afterbody %}
-	<!-- Submit form -->
-<script type="text/javascript">
-	$(document).ready(function(){
-
-		$("#formvote1").submit(function(){
-			$.post("{{bb_url}}/vbb/{{election.EID}}/client/",
-			{serial:{{serial}}
-			code:$('input[name="options1"]:checked').val(),
-			csrfmiddlewaretoken:'{{ csrf_token }}'
-			},
-			function(data,status){
-				if(data == "invalid code"){
-					$('#invalidModal').modal('show');
-				}
-				else {
-					$('#inputcode').replaceWith('<input type="text" id="inputcode"  readonly="true" name = "checkcode" class="form-control" value="'+data+'">');
-					$('#feedbackModal').modal('show');
-					}
-			})
-			.fail(function(xhr) {
-				console.log("Error: " + xhr.statusText);
-				alert("Error: " + xhr.statusText);
-			});
-			return false;
-		});
-
-
-
-
-                $("#formvote2").submit(function(){
-                        $.post("{{bb_url}}/vbb/{{election.EID}}/client/",
-                        {serial:{{serial}}
-                        code:$('input[name="options2"]:checked').val(),
-                        csrfmiddlewaretoken:'{{ csrf_token }}'
-                        },
-                        function(data,status){
-                                if(data == "invalid code"){
-                                        $('#invalidModal').modal('show');
-                                }
-                                else {
-                                        $('#inputcode').replaceWith('<input type="text" id="inputcode"  readonly="true" name = "checkcode" class="form-control" value="'+data+'">');
-                                        $('#feedbackModal').modal('show');
-                                        }
-                        })
-                        .fail(function(xhr) {
-                                console.log("Error: " + xhr.statusText);
-                                alert("Error: " + xhr.statusText);
-                        });
-                        return false;
-                });
-
-
-
-
-	});
-</script>
 {% endblock %}
 
 

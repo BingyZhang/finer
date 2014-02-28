@@ -52,7 +52,7 @@ def send_request(e):
 	n = len(opts)
 	#get all for fast disk IO
 	abbs = e.abbinit_set.all()
-	opt_ciphers = [[]]*n#ElGamal
+	opt_ciphers = [[] for x in range(n)]#ElGamal
         #prepare the table_data
         for each in votes:
 		feedback = each.dballot_set.filter(checked = True)
@@ -105,8 +105,9 @@ def send_request(e):
 	#output for tally
 	for i in range(n):
 		temp_str = "\n".join(opt_ciphers[i])
-		#f = open('/var/www/finer/EC-ElGamal/Tally.txt', 'w')
+		#f = open('/var/www/finer/EC-ElGamal/debug.txt', 'a')
 		#f.write(temp_str)
+		#f.write("\n\n\n")
 		#f.close
 		p = subprocess.Popen(["sh","/var/www/finer/EC-ElGamal/Tally.sh",temp_str],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	    	output,err = p.communicate()
@@ -115,6 +116,8 @@ def send_request(e):
 	#store result
 	e.tally = True
 	e.save()
+
+
 def verify_code(e,s,vcode):
 	codelist = []
 	templist = []
@@ -287,10 +290,31 @@ def client(request, eid = 0):
     except Election.DoesNotExist:
 	return HttpResponse('The election ID is invalid!')
     if request.method == 'POST':
-	return HttpResponse(request.POST['serial'])	
+	feedback = []
+        # maximum 50 options
+        for i in range(1,51):
+            temp = request.POST.get('feedback'+str(i),'')
+            if temp != '':
+                feedback.append(temp)
+            else:
+                break
+	code = request.POST["options"].upper()
+	serial = request.POST["serial"].upper()
+	codelist,receipt = verify_code(e,serial,code)
+        if receipt != "":
+            #add the code to DB
+            new_entry = Vbb(election = e, serial = serial, votecode = code)
+            new_entry.save()
+            #store the dual ballot feedback
+            for x in feedback:
+		feed = x.split(",")
+		if feed[0] in codelist:
+            	    balls = Dballot(vbb = new_entry, serial = serial, code = feed[0], checked = True, value = feed[1])
+                    balls.save()
 
-    	return HttpResponse('Got it.')                
-        
+            return render_to_response('thanks.html')
+	else:
+	    return render_to_response('client_reject.html')
         
     else:
         return render_to_response('404.html')
