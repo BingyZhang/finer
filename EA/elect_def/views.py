@@ -37,7 +37,9 @@ def base36decode(number):
 
 @csrf_exempt  # not secure, need signature or TBA
 def index(request):
-    name = request.META['HTTP_CAS_CN_LANG_EL']
+    name = request.META.get('HTTP_CAS_CN_LANG_EL','')
+    if name == '':# for non-greek person
+        name = request.META['HTTP_CAS_CN']
     if request.method == 'POST':
         q = request.POST['question']
         start = request.POST['elect_start']

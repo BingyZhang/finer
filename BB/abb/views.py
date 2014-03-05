@@ -428,6 +428,9 @@ def upload(request, eid = 0):
 		temp2 = ",".join(fake_rand)
 		new_abb = Abbinit(election = e, codes1 = ",".join(code1), codes2 = ",".join(code2), rand1 = temp2, rand2 = temp2 , aux1 = temp1, aux2 = temp1, zeroone = base64.b64encode(os.urandom(8)),serial = serial, enc1 = enc1, enc2 = enc2, cipher1 = cipher1, cipher2 = cipher2)
 		new_abb.save()
+		#clean var
+		code1 = []
+        	code2 = []
 	return HttpResponse("Success")
 
     else:

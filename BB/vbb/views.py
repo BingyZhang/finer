@@ -63,7 +63,7 @@ def send_request(e):
 		cipher2 = record.cipher2.split(',')
 		mark1 = []
 		mark2 = []
-		for i in range(len(codes1)):
+		for i in range(n):
 			if each.votecode == codes1[i]:
 				mark1.append("Voted")
 				#2n*i to 2n*(i+1)-1 put ciphers
@@ -76,7 +76,7 @@ def send_request(e):
                                                 opt_ciphers[j].append(t)				
 			else:
 				mark1.append("")
-		for i in range(len(codes2)):
+		for i in range(n):
                         if each.votecode == codes2[i]:
                                 mark2.append("Voted")
                                 #2n*i to 2n*(i+1)-1 put ciphers
@@ -92,10 +92,10 @@ def send_request(e):
 		#mark feedbacks
                 if len(feedback)!=0:
 			for feed in feedback:
-				for i in range(len(codes1)):
+				for i in range(n):
                         		if feed.code == codes1[i]:
 						mark1[i] = feed.value
-				for i in range(len(codes2)):
+				for i in range(n):
                                         if feed.code == codes2[i]:
                                                 mark2[i] = feed.value
 		#store marks
@@ -245,13 +245,20 @@ def index(request, eid = 0):
 			temp_row.append(item.votecode)
 			temp_row.append(item.date)
 			unused = item.dballot_set.filter(checked = True)
-			if len(unused)==0:
+			l = len(unused)
+			if l==0:
 			    temp_row.append("")
 			    temp_row.append("")			
 
 			else:
-                            temp_row.append(unused[0].code)
-			    temp_row.append(unused[0].value)
+			#randomly display one
+			    if l > 1:
+				x = random.randrange(l)
+				temp_row.append(unused[x].code)
+                                temp_row.append(unused[x].value)
+			    else: 
+                                temp_row.append(unused[0].code)
+			        temp_row.append(unused[0].value)
 			table_data.append(temp_row)
 		progress = int(e.vbb_set.count()*100/e.total+0.5)
 

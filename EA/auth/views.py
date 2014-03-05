@@ -20,7 +20,9 @@ ABB_URL = "http://tal.di.uoa.gr/finer"
 
 def login(request):
     #handle CAS
-    name = request.META['HTTP_CAS_CN_LANG_EL']
+    name = request.META.get('HTTP_CAS_CN_LANG_EL','')
+    if name == '':# for non-greek person
+	name = request.META['HTTP_CAS_CN']
     elist = Election.objects.order_by('end')
     #constraint filter
     user_Paffiliation = request.META['HTTP_CAS_EDUPERSONPRIMARYAFFILIATION'].lower().rstrip()
@@ -91,7 +93,9 @@ def vote(request, eid = 0):
     if e.was_ended():
 	running = 2
     #assigne ballot
-    name = request.META['HTTP_CAS_CN_LANG_EL']
+    name = request.META.get('HTTP_CAS_CN_LANG_EL','')
+    if name == '':# for non-greek person
+        name = request.META['HTTP_CAS_CN']
     ID = request.META['HTTP_CAS_UID']
     email = request.META['HTTP_CAS_MAIL'] 
     first_time = False
@@ -104,6 +108,9 @@ def vote(request, eid = 0):
 	b = e.ballot_set.filter(used = False)[0]
 	assign = Assignment(election = e, vID = ID, serial = b.serial)
 	assign.save()
+	#mark as used
+	b.used = True
+	b.save()
     #get codes and options
     codes1 = b.codes1.split(',')
     codes2 = b.codes2.split(',')
