@@ -7,6 +7,7 @@ from django.utils import timezone
 class Election(models.Model):    
 	start = models.DateTimeField()
 	end = models.DateTimeField()
+	prepared = models.BooleanField(default=False)
 	question = models.CharField(max_length=4096)
 	EID = models.CharField(max_length=512)
 	tally = models.BooleanField(default=False)

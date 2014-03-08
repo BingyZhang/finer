@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from celery import shared_task
 from django.utils import timezone
+from django.core.files.base import ContentFile
 from elect_def.models import Election, Ballot,Randomstate
 import hashlib,hmac,base64,os,binascii,subprocess, cStringIO, csv, zipfile, requests
 from Crypto.Cipher import AES
@@ -95,9 +96,13 @@ def prepare_ballot(e, total, n):
 	        c1 = long(binascii.hexlify(c[0:8]), 16) #convert 64 bit string to long
 	        c1 &= 0x3fffffffffffffff # 64 --> 62 bits
 	        sc1 = base36encode(c1)
+		while len(sc1)<12:#length padding
+		    sc1 = "0"+sc1
 	        r1 = long(binascii.hexlify(c[8:12]), 16) #convert 32 bit string to long
                 r1 &= 0x7fffffff # 32 --> 31 bits
                 sr1 = base36encode(r1)
+		while len(sr1)<6:#length padding
+                    sr1 = "0"+sr1
                 if i > 0:
 		    codes[ab]+=","
 		    recs[ab]+=","
@@ -140,7 +145,9 @@ def prepare_ballot(e, total, n):
         temp_list = each.cipher2.split(',')
         writer.writerow(temp_list)
     #post
-    reply = requests.post(BB_URL+e.EID+'/upload/',data = {'inputdata':output.getvalue()})
+    reply = requests.post(BB_URL+e.EID+'/upload/',files = {'inputfile':ContentFile(output.getvalue(),name = "init.csv")})
+    #close
+    output.close()
     return reply
 
 

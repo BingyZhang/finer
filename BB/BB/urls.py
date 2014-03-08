@@ -10,4 +10,5 @@ urlpatterns = patterns('',
     url(r'^abb/', include('abb.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^def/', 'abb.views.init'),
+    url(r'^test/(?P<tab>\d+)/$', 'vbb.views.test'),
 ) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

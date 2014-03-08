@@ -40,6 +40,7 @@ def index(request):
     name = request.META.get('HTTP_CAS_CN_LANG_EL','')
     if name == '':# for non-greek person
         name = request.META['HTTP_CAS_CN']
+    email = request.META['HTTP_CAS_MAIL']
     if request.method == 'POST':
         q = request.POST['question']
         start = request.POST['elect_start']
@@ -82,7 +83,7 @@ def index(request):
         #    return HttpResponse(r)#('Error!')
 
         #create election
-        new_e = Election(Paffiliation = Paffiliation, title = title, Porg = Porg, start = datetime.fromtimestamp(time.mktime(start_time)), end = datetime.fromtimestamp(time.mktime(end_time)), question = q, EID = eid, total = total)
+        new_e = Election(creator = name, c_email = email, Paffiliation = Paffiliation, title = title, Porg = Porg, start = datetime.fromtimestamp(time.mktime(start_time)), end = datetime.fromtimestamp(time.mktime(end_time)), question = q, EID = eid, total = total)
         new_e.save()
         # store choices
         for x in opts:
@@ -102,7 +103,6 @@ def index(request):
         data.append("eduPersonPrimaryOrgUnitDN: "+Porg)
 	VBB_url = BB_URL+"vbb/"+eid+"/"
         ABB_url = BB_URL+"abb/"+eid+"/"
-        email = request.META['HTTP_CAS_MAIL']
 	#send email
 	en_name = request.META['HTTP_CAS_CN']
 	emailbody = "Hello "+en_name+",\n The following election is created.\n"
@@ -112,7 +112,7 @@ def index(request):
     	emailbody+= "\nFINER  Election Authority\n"
 
     	#send email         
-    	p = subprocess.Popen(["sudo","/home/bingsheng/bingmail.sh","Election Definition "+eid, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition "+eid, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     	output,err = p.communicate()
 	#celery prepare ballots
 	prepare_ballot.delay(new_e, int(total)+1,len(opts))

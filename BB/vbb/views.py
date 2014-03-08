@@ -142,19 +142,31 @@ def verify_code(e,s,vcode):
                 c = hmac.new(key, message, digestmod=hashlib.sha256).digest()
 	        c1 = long(binascii.hexlify(c[0:8]), 16) #convert 64 bit string to long
 	        c1 &= 0x3fffffffffffffff # 64 --> 62 bits
-	        codes1.append(base36encode(c1))
+		sc1 = base36encode(c1)
+                while len(sc1)<12:#length padding
+                    sc1 = "0"+sc1
+	        codes1.append(sc1)
 	        r1 = long(binascii.hexlify(c[8:12]), 16) #convert 32 bit string to long
                 r1 &= 0x7fffffff # 32 --> 31 bits
-                rec1.append(base36encode(r1))
+		sr1 = base36encode(r1)
+                while len(sr1)<6:#length padding
+                    sr1 = "0"+sr1
+                rec1.append(sr1)
                 #ballot 2
                 message = bytes(s+str(1)+str(i)).encode('utf-8') 
                 c = hmac.new(key, message, digestmod=hashlib.sha256).digest()
 	        c2 = long(binascii.hexlify(c[0:8]), 16) #convert 64 bit string to long
 	        c2 &= 0x3fffffffffffffff # 64 --> 62 bits
-	        codes2.append(base36encode(c2))
+		sc2 = base36encode(c2)
+                while len(sc2)<12:#length padding
+                    sc2 = "0"+sc2
+	        codes2.append(sc2)
 	        r2 = long(binascii.hexlify(c[8:12]), 16) #convert 32 bit string to long
                 r2 &= 0x7fffffff # 32 --> 31 bits
-                rec2.append(base36encode(r2))
+		sr2 = base36encode(r2)
+                while len(sr2)<6:#length padding
+                    sr2 = "0"+sr2
+                rec2.append(sr2)
 	for i in range(n):
                 if codes1[i] == checkcode:
                         templist = codes2
@@ -169,7 +181,7 @@ def verify_code(e,s,vcode):
                         record.save()
                         break
 	for x in templist:
-		codelist.append(addbars(x))       
+		codelist.append(addbars(x))  #add bars     
 	return codelist,receipt
 
 
@@ -394,8 +406,8 @@ def upload(request, eid = 0):
 
 
 
-
-
+def test(request, tab = 0):
+	return render_to_response('test.html',{'tab':tab})
 
 
 

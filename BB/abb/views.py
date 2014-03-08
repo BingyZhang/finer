@@ -1,6 +1,7 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, render
 from django.http import HttpResponse, HttpResponseRedirect
+from django.core.paginator import Paginator, InvalidPage
 from crypto import commitment
 import time, requests, hashlib
 from datetime import datetime
@@ -77,8 +78,18 @@ def index(request, eid = 0, tab = 0):
         #prepare ver. 1
 	version = [1]
         table = []
+	#if not ready
+	if not e.prepared:
+	    return HttpResponse('Not ready yet!')
         abb_list = e.abbinit_set.all()
-        for entry in abb_list:
+        p = Paginator(abb_list,20)
+	page = 1
+        current = p.page(page)
+        if current.has_next():
+            next_page = page+1
+        else:
+            next_page = 0
+        for entry in current.object_list:	
             enc1 = entry.enc1.split(',')
             enc2 = entry.enc1.split(',')
             elen = len(enc1)
@@ -149,8 +160,61 @@ def index(request, eid = 0, tab = 0):
             Vtable.append(table)
 	#end of verion 2
         BigData={'Data':Vtable,'Ver':version} 
-        return render_to_response('abb.html', {'election':e, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
+        return render_to_response('abb.html', {'election':e,'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
      
+
+
+def scroll(request, eid = 0, tab = 0, page = 1):
+    try:
+        e = Election.objects.get(EID=eid)
+    except Election.DoesNotExist:
+        return HttpResponse('The election ID is invalid!')
+
+    Vtable = []
+    #prepare ver. 1
+    version = [1]
+    table = []
+    abb_list = e.abbinit_set.all()
+    p = Paginator(abb_list,20)
+    current = p.page(page)
+    if current.has_next():
+	next_page = int(page)+1
+    else:
+	next_page = 0
+    for entry in current.object_list:
+        enc1 = entry.enc1.split(',')
+        enc2 = entry.enc1.split(',')
+        elen = len(enc1)
+        cipher1 = entry.cipher1.split(',')
+        clen = len(cipher1)
+        rowlen = clen/elen
+        cipher2 = entry.cipher2.split(',')
+        #fake aux column
+        aux1 = entry.aux1.split(',')
+        aux2 = entry.aux2.split(',')
+        zeroone = entry.zeroone
+        for i in range(elen):
+            if i ==0:
+                s = entry.serial+" A"
+            else:
+                s = ''
+            temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])    
+            table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':""},{'cipher':temp},{'aux':aux1[i]},{'mark':""},{'rand':""},{}])
+        for i in range(elen):
+            if i ==0:
+                s = entry.serial+" B"
+            else:
+                s = ''
+            temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])     
+            table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':""},{'cipher':temp},{'aux':aux2[i]},{'mark':""},{'rand':""},{}])
+    Vtable.append(table)
+    BigData={'Data':Vtable,'Ver':version} 
+    return render_to_response('scroll.html', {'eid':eid,'tab':tab,'next_page':next_page, 'BigData':BigData,'col_names':col_names})         
+     
+
+
+
+
 
 
 
@@ -371,8 +435,8 @@ def upload(request, eid = 0):
     except Election.DoesNotExist:
 	return HttpResponse('The election ID is invalid!')
     if request.method == 'POST':
-        csvfile = request.POST['inputdata']
-	reader = csvfile.splitlines()
+        csvfile = request.FILES['inputfile']
+	reader = csvfile.read().splitlines()
 	counter = -2
 	serial = ""
 	enc1 = ""
@@ -431,6 +495,8 @@ def upload(request, eid = 0):
 		#clean var
 		code1 = []
         	code2 = []
+	e.prepared = True
+	e.save()
 	return HttpResponse("Success")
 
     else:

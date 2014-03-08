@@ -70,7 +70,7 @@
 		{% if running == 3 %}
 			<p><font color="blue">Election Result: </font></p>
 			{% for opt in options %}
-			<a type="button" class="btn btn-info">{{opt.text}} <span class="badge">{{opt.votes}}</span></a></li>
+			<a type="button" class="btn btn-info">{{opt.text}} <span class="badge">{{opt.votes}}</span></a>
 			{% endfor %}
 		{% endif %}
 		{% if running == 10 %}

@@ -143,7 +143,7 @@ def vote(request, eid = 0):
     	emailbody+= "ABB_url: "+ABB_URL+"/abb/"+eid+"/\n"
     	emailbody+= "\nFINER Ballot Distribution Server\n"
     	#send email		
-    	p = subprocess.Popen(["sudo","/home/bingsheng/bingmail.sh","Ballot for Election "+eid, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Ballot for Election "+eid, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     	output,err = p.communicate()
 
 

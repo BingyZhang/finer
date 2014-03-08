@@ -22,7 +22,7 @@ class UpdateInfoAdmin(admin.ModelAdmin):
 
 class AbbinitAdmin(admin.ModelAdmin):
     list_display = ('serial', 'enc1','enc2')
-    list_filter = ['serial']
+    list_filter = ['election']
     search_fields = ['serial']
 
 admin.site.register(Auxiliary, AuxiliaryAdmin)
