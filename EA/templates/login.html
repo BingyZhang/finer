@@ -14,14 +14,6 @@
         border: 1px solid #e1e1e8;
         border-radius: 4px;
     }
-
-    .election {
-        padding: 4px 4px;
-        margin-top: 7px;
-        margin-bottom: 7px;
-        border: 1px solid #e1e1e8;
-        border-radius: 4px;
-    }
 </style>
 {% endblock %}
 
@@ -34,18 +26,36 @@
 	<p>{{c}}</p>
         <h2>You are eligible for the following election(s):</h2>
         {% for entry in elist %}
-	<div class="election">
-	<p><font size="4">Election {{forloop.counter}}: </font>      <a class="btn btn-large {% if entry.ended %}btn-warning" disabled="disabled"{% else %}btn-success"{% endif %} type="button"
-            href="{{BB_URL}}/vote/{{entry.e.EID}}/" target="_blank">{{entry.e.question}}</a></p>
+	{% if entry.ended %}
+	<div class="alert alert-warning">
+	<p><font size="4">Election {{forloop.counter}}: </font>      <a class="btn btn-large btn-warning" disabled="disabled" type="button"
+            href="{{BB_URL}}/vote/{{entry.e.EID}}/">{{entry.e.question}}</a></p>
 	<p> <font size="4">Creator: {{entry.e.creator}} (Email address: {{entry.e.c_email}})</font></p>
-        <div class="btn-group">
-                <button type="button" class="btn btn-default" disabled="disabled">Start time: {{entry.e.start}}</button>
-                <button type="button" class="btn btn-default" disabled="disabled">End time: {{entry.e.end}}</button>
-        </div>
-	<p></p>
-	<p>VBB: <a href="http://tal.di.uoa.gr/finer/vbb/{{entry.e.EID}}/">http://tal.di.uoa.gr/finer/vbb/{{entry.e.EID}}/</a></p>
-	<p>ABB: <a href="http://tal.di.uoa.gr/finer/abb/{{entry.e.EID}}/">http://tal.di.uoa.gr/finer/abb/{{entry.e.EID}}/</a></p>
+	<p>Start time: {{entry.e.start}} &nbsp&nbsp&nbsp  End time: {{entry.e.end}}</p>
+	<p>VBB: <a href="http://tal.di.uoa.gr/finer/vbb/{{entry.e.EID}}/" class="alert-link">http://tal.di.uoa.gr/finer/vbb/{{entry.e.EID}}/</a></p>
+	<p>ABB: <a href="http://tal.di.uoa.gr/finer/abb/{{entry.e.EID}}/" class="alert-link">http://tal.di.uoa.gr/finer/abb/{{entry.e.EID}}/</a></p>
 	</div>
+	{% else %}
+		{% if entry.e.prepared %}
+        <div class="alert alert-success">
+        <p><font size="4">Election {{forloop.counter}}: </font>      <a class="btn btn-large btn-success" type="button"
+            href="{{BB_URL}}/vote/{{entry.e.EID}}/">{{entry.e.question}}</a></p>
+        <p> <font size="4">Creator: {{entry.e.creator}} (Email address: {{entry.e.c_email}})</font></p>
+        <p>Start time: {{entry.e.start}} &nbsp&nbsp&nbsp  End time: {{entry.e.end}}</p>
+        <p>VBB: <a href="http://tal.di.uoa.gr/finer/vbb/{{entry.e.EID}}/" class="alert-link">http://tal.di.uoa.gr/finer/vbb/{{entry.e.EID}}/</a></p>
+        <p>ABB: <a href="http://tal.di.uoa.gr/finer/abb/{{entry.e.EID}}/" class="alert-link">http://tal.di.uoa.gr/finer/abb/{{entry.e.EID}}/</a></p>
+        </div>			
+		{% else %}
+        <div class="alert alert-info">
+        <p><font size="4">Election {{forloop.counter}}: </font>      <a class="btn btn-large btn-info" disabled="disabled" type="button"
+            href="{{BB_URL}}/vote/{{entry.e.EID}}/">{{entry.e.question}}</a></p>
+        <p> <font size="4">Creator: {{entry.e.creator}} (Email address: {{entry.e.c_email}})</font></p>
+        <p>Start time: {{entry.e.start}} &nbsp&nbsp&nbsp  End time: {{entry.e.end}}</p>
+        <p>VBB: <a href="http://tal.di.uoa.gr/finer/vbb/{{entry.e.EID}}/" class="alert-link">http://tal.di.uoa.gr/finer/vbb/{{entry.e.EID}}/</a></p>
+        <p>ABB: <a href="http://tal.di.uoa.gr/finer/abb/{{entry.e.EID}}/" class="alert-link">http://tal.di.uoa.gr/finer/abb/{{entry.e.EID}}/</a></p>
+        </div>
+		{% endif %}
+	{% endif %}
         {% endfor %}
     </div>
 </div>

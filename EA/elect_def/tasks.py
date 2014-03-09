@@ -110,6 +110,9 @@ def prepare_ballot(e, total, n):
 	        recs[ab]+=sr1
 	new_b = Ballot(election = e, serial = serial, key = skey, votes1 = votes[0],votes2 = votes[1],cipher1 = ciphers[0],cipher2 = ciphers[1], codes1 = codes[0],codes2 = codes[1],rec1 = recs[0],rec2 = recs[1])
         new_b.save()
+    #mark as prepared
+    e.prepared = True
+    e.save()
     #send ABB CSV data
     #random key for column 1
     k1 = os.urandom(KSIZE)
