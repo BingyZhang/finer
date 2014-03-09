@@ -48,7 +48,7 @@ class DataTriple:
         self.Ver = y
         self.Log = z
 
-col_names = ['Serial #', 'Vote Code', 'Candidate Index', 'Pre-vote Audit', 'Vote Mark','Random Coin', 'Post-vote Audit']
+col_names = ['Serial #', 'Vote Code', 'Candidate Index', 'Pre-vote Audit', 'Vote & Feedback Mark','Random Coin', 'Post-vote Audit']
 
 col_mapping = {'SN&VC (comm)':1,	 'SN&VC (plain)':2,	 'SN&VC (decomm)':3,	 'PCheck (comm)':4,	 'PCheck (plain)':5,	 'PCheck (decomm)':6,	 'PossVote (comm)':7,	 'PossVote (plain)':8,	 'PossVote (decomm)':9,	 'MarkVoted (comm)':10,	 'MarkVoted (plain)':11,	 'MarkVoted (decomm)':12,	 'PreSumA (comm)':13,	 'PreSumA (plain)':14,	 'PreSumA (decomm)':15,	 'PreSumB (comm)':16,	 'PreSumB (plain)':17,	 'PreSumB (decomm)':18,	 'FinalSumA (comm)':19,	 'FinalSumA (plain)':20,	 'FinalSumA (decomm)':21,	 'FinalSumB (comm)':22,	 'FinalSumB (plain)':23,	 'FinalSumB (decomm)':24}
  
@@ -61,7 +61,7 @@ def empty(request):
 
 
 
-def index(request, eid = 0, tab = 0):
+def index(request, eid = 0, tab = 1):
     try:
 	e = Election.objects.get(EID=eid)
     except Election.DoesNotExist:
@@ -74,52 +74,56 @@ def index(request, eid = 0, tab = 0):
     
 
     else:
-        Vtable = []
-        #prepare ver. 1
-	version = [1]
-        table = []
-	#if not ready
-	if not e.prepared:
-	    return HttpResponse('Not ready yet!')
+        #if not ready
+        if not e.prepared:
+            return HttpResponse('Not ready yet!')
         abb_list = e.abbinit_set.all()
         p = Paginator(abb_list,20)
-	page = 1
+        page = 1
         current = p.page(page)
         if current.has_next():
             next_page = page+1
         else:
-            next_page = 0
-        for entry in current.object_list:	
-            enc1 = entry.enc1.split(',')
-            enc2 = entry.enc1.split(',')
-            elen = len(enc1)
-            cipher1 = entry.cipher1.split(',')
-            clen = len(cipher1)
-            rowlen = clen/elen
-            cipher2 = entry.cipher2.split(',')
-            #fake aux column
-            aux1 = entry.aux1.split(',')
-            aux2 = entry.aux2.split(',')
-            zeroone = entry.zeroone
-            for i in range(elen):
-                if i ==0:
-                    s = entry.serial+" A"
-                else:
-                    s = ''
-                temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])    
-                table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':""},{'cipher':temp},{'aux':aux1[i]},{'mark':""},{'rand':""},{}])
-            for i in range(elen):
-                if i ==0:
-                    s = entry.serial+" B"
-                else:
-                    s = ''
-                temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])     
-                table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':""},{'cipher':temp},{'aux':aux2[i]},{'mark':""},{'rand':""},{}])
-        Vtable.append(table)
-	if e.tally:# ver. 2
-	    version.append(2)
+            next_page = 0    
+        #version 1 or 1,2
+        version = [1]
+        if e.tally:
+            version.append(2)
+        Vtable = []
+        int_tab = int(tab)
+        #version 1
+        if int_tab == 1:
+            table = []
+            for entry in current.object_list:	
+                enc1 = entry.enc1.split(',')
+                enc2 = entry.enc1.split(',')
+                elen = len(enc1)
+                cipher1 = entry.cipher1.split(',')
+                clen = len(cipher1)
+                rowlen = clen/elen
+                cipher2 = entry.cipher2.split(',')
+                #fake aux column
+                aux1 = entry.aux1.split(',')
+                aux2 = entry.aux2.split(',')
+                zeroone = entry.zeroone
+                for i in range(elen):
+                    if i ==0:
+                        s = entry.serial+" A"
+                    else:
+                        s = ''
+                    temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])    
+                    table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':""},{'cipher':temp},{'aux':aux1[i]},{'mark':""},{'rand':""},{}])
+                for i in range(elen):
+                    if i ==0:
+                        s = entry.serial+" B"
+                    else:
+                        s = ''
+                    temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])     
+                    table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':""},{'cipher':temp},{'aux':aux2[i]},{'mark':""},{'rand':""},{}])
+            Vtable.append(table)
+	if int_tab == 2:# ver. 2
 	    table = []
-            for entry in abb_list:
+            for entry in current.object_list:
             	enc1 = entry.enc1.split(',')
             	enc2 = entry.enc1.split(',')
             	elen = len(enc1)
@@ -160,191 +164,106 @@ def index(request, eid = 0, tab = 0):
             Vtable.append(table)
 	#end of verion 2
         BigData={'Data':Vtable,'Ver':version} 
-        return render_to_response('abb.html', {'election':e,'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
+        return render_to_response('abb.html', {'election':e,'tab':tab,'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
      
 
 
-def scroll(request, eid = 0, tab = 0, page = 1):
+def scroll(request, eid = 0, tab = 1, page = 1):
     try:
         e = Election.objects.get(EID=eid)
     except Election.DoesNotExist:
         return HttpResponse('The election ID is invalid!')
-
     Vtable = []
-    #prepare ver. 1
-    version = [1]
-    table = []
+    #if not ready
+    if not e.prepared:
+        return HttpResponse('Not ready yet!')
     abb_list = e.abbinit_set.all()
     p = Paginator(abb_list,20)
-    current = p.page(page)
+    int_page = int(page)
+    current = p.page(int_page)
     if current.has_next():
-	next_page = int(page)+1
+        next_page = int_page+1
     else:
-	next_page = 0
-    for entry in current.object_list:
-        enc1 = entry.enc1.split(',')
-        enc2 = entry.enc1.split(',')
-        elen = len(enc1)
-        cipher1 = entry.cipher1.split(',')
-        clen = len(cipher1)
-        rowlen = clen/elen
-        cipher2 = entry.cipher2.split(',')
-        #fake aux column
-        aux1 = entry.aux1.split(',')
-        aux2 = entry.aux2.split(',')
-        zeroone = entry.zeroone
-        for i in range(elen):
-            if i ==0:
-                s = entry.serial+" A"
+        next_page = 0
+    int_tab = int(tab)    
+    #version 1
+    if int_tab == 1:
+        table = []
+        for entry in current.object_list:	
+            enc1 = entry.enc1.split(',')
+            enc2 = entry.enc1.split(',')
+            elen = len(enc1)
+            cipher1 = entry.cipher1.split(',')
+            clen = len(cipher1)
+            rowlen = clen/elen
+            cipher2 = entry.cipher2.split(',')
+            #fake aux column
+            aux1 = entry.aux1.split(',')
+            aux2 = entry.aux2.split(',')
+            zeroone = entry.zeroone
+            for i in range(elen):
+                if i ==0:
+                    s = entry.serial+" A"
+                else:
+                    s = ''
+                temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])    
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':""},{'cipher':temp},{'aux':aux1[i]},{'mark':""},{'rand':""},{}])
+            for i in range(elen):
+                if i ==0:
+                    s = entry.serial+" B"
+                else:
+                    s = ''
+                temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])     
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':""},{'cipher':temp},{'aux':aux2[i]},{'mark':""},{'rand':""},{}])
+        Vtable.append(table)
+    if int_tab == 2:# ver. 2
+        table = []
+        for entry in current.object_list:
+            enc1 = entry.enc1.split(',')
+            enc2 = entry.enc1.split(',')
+            elen = len(enc1)
+            cipher1 = entry.cipher1.split(',')
+            clen = len(cipher1)
+            rowlen = clen/elen
+            cipher2 = entry.cipher2.split(',')
+            #fake aux column
+            aux1 = entry.aux1.split(',')
+            aux2 = entry.aux2.split(',')
+            rand1 = entry.rand1.split(',')
+            rand2 = entry.rand2.split(',')
+            code1 = entry.codes1.split(',')
+            code2 = entry.codes2.split(',')
+            if entry.mark1:
+                mark1 = entry.mark1.split(',')
             else:
-                s = ''
-            temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])    
-            table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':""},{'cipher':temp},{'aux':aux1[i]},{'mark':""},{'rand':""},{}])
-        for i in range(elen):
-            if i ==0:
-                s = entry.serial+" B"
+                mark1 = [""]*elen
+            if entry.mark2:
+                mark2 = entry.mark2.split(',')
             else:
-                s = ''
-            temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])     
-            table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':""},{'cipher':temp},{'aux':aux2[i]},{'mark':""},{'rand':""},{}])
-    Vtable.append(table)
-    BigData={'Data':Vtable,'Ver':version} 
+                mark2 = [""]*elen
+            zeroone = entry.zeroone
+            for i in range(elen):
+                if i ==0:
+                    s = entry.serial+" A"
+                else:
+                    s = ''
+                temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':code1[i]},{'cipher':temp},{'aux':aux1[i]},{'mark':mark1[i]},{'rand':rand1[i]},{}])
+            for i in range(elen):
+                if i ==0:
+                    s = entry.serial+" B"
+                else:
+                    s = ''
+                temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':code2[i]},{'cipher':temp},{'aux':aux2[i]},{'mark':mark2[i]},{'rand':rand2[i]},{}])
+        Vtable.append(table)
+    #end of verion 2
+    BigData={'Data':Vtable} 
     return render_to_response('scroll.html', {'eid':eid,'tab':tab,'next_page':next_page, 'BigData':BigData,'col_names':col_names})         
      
 
 
 
-
-
-
-
-
-
-
-def index_bak(request, eid = 0, tab = 0):
-	try:
-		e = Election.objects.get(EID=eid)
-	except Election.DoesNotExist:
-		return HttpResponse('The election ID is invalid!')
-	if request.method == 'POST':#export
-            flag_abb = False
-            flag_vbb = False
-            flag_rand = False
-            flag_def = False
-            #set checks
-            if "abbCheck" in request.POST.keys():
-                flag_abb = True
-            if "randCheck" in request.POST.keys():
-                flag_rand = True
-            if "vbbCheck" in request.POST.keys():
-                flag_vbb = True
-            if "defCheck" in request.POST.keys():
-                flag_def = True
-            #zip everything    
-            response = HttpResponse(content_type="application/zip")  
-            response['Content-Disposition'] = 'attachment; filename=ABB.zip'
-            z = zipfile.ZipFile(response,'w')   ## write zip to response
-            aux = e.auxiliary_set.all()#at most one
-            if len(aux) != 0:#has aux
-                if flag_vbb and aux[0].vbb_data:#if vbb data exists
-                    z.writestr("VBB_data.zip", aux[0].vbb_data.read())
-                    z.writestr("Sig_vbbData.txt", aux[0].vbb_sig.read())
-                if flag_rand and aux[0].randomnessA:#if randomness data exists
-                    z.writestr("Randomness1.zip", aux[0].randomnessA.read())
-                    z.writestr("Sig_Randomness1.txt", aux[0].rand_sigA.read())
-		if flag_rand and aux[0].randomnessB:#if randomness data exists
-                    z.writestr("Randomness2.zip", aux[0].randomnessB.read())
-                    z.writestr("Sig_Randomness2.txt", aux[0].rand_sigB.read())
-                if flag_def and aux[0].election_def:#if def data exists
-                    z.writestr("Election_def.zip", aux[0].election_def.read())
-                    z.writestr("Sig_electDef.txt", aux[0].def_sig.read())
-                if flag_abb:#if abb data
-                    #export csv and signature   
-                    ulist = e.updateinfo_set.all()
-                    for u in ulist:
-                        z.writestr(u.file.name, u.file.read())
-                        z.writestr(u.sig.name, u.sig.read())
-            return response
-
-
-        else:    
-            BigData = []
-            Adatalist = e.abbdata_set.all()
-            Akeylist = e.abbkey_set.all()
-            Aloglist = e.updateinfo_set.all()
-            # obtain current table numbers
-            table_list = Akeylist.values('table').distinct()
-            tablenums = [x['table'] for x in table_list]
-            tablenums.sort()
-            if int(tab) in tablenums:
-                tabnum = tab
-            else:    
-                tabnum = tablenums[0]   
-            #for tabnum in tablenums:
-            #obtain length
-            lenlist = Adatalist.filter(table = tabnum).values('length').order_by('-length')
-            length = lenlist[0]['length']
-            #obtain all the versions
-            verlist = Akeylist.filter(table = tabnum).values('version').distinct()
-            ver = [x['version'] for x in verlist]
-            ver.sort()
-            Vtime = ver
-            #obtain the update logs
-            loglist = Aloglist.filter(table = tabnum).values('date').order_by('date')
-            Vlog = [x['date'] for x in loglist]
-            Vtable = []
-            #for each version
-            for j in ver:
-                table = [] #table data = many rows
-                # first row is key
-                keylist = Akeylist.filter(table = tabnum,version__lt = j+1)
-                data = [] #row data
-                for i in range(1,9):
-                    templist = keylist.filter(column = i).order_by('-version')
-                    if len(templist) ==0:
-                        data.append(Ctuple(False,'','',''))
-                    else:
-                    # non empty use latest version
-                        if templist[0].plaintext:
-                            data.append(Ctuple(True, templist[0].plaintext,templist[0].commitment,templist[0].decommitment))
-                        else:
-                            data.append(Ctuple(False,'',templist[0].commitment,''))
-                table.append(data)
-                #take all the column data
-                datalist = Adatalist.filter(table = tabnum,version__lt = j+1)
-                #8 different columns with c,p,d
-                col_data = [[] for x in range(24)]
-                for i in range(1,9):
-                    templist = datalist.filter(column = i).order_by('-version')
-                    col_data[3*(i-1)+2] = ['' for x in range(length)]
-                    if len(templist) ==0:
-                        col_data[3*(i-1)] = ['' for x in range(length)]
-                        col_data[3*(i-1)+1] = ['' for x in range(length)]
-                    else:
-                        # non empty
-                        if templist[0].ciphertext:
-                            col_data[3*(i-1)] = templist[0].ciphertext.split(',')
-                        else:
-                            col_data[3*(i-1)] = ['' for x in range(length)]
-                        if templist[0].plaintext:   
-                            col_data[3*(i-1)+1] = templist[0].plaintext.split(',')
-                        else:    
-                            col_data[3*(i-1)+1] = ['' for x in range(length)]
-                #prepare data    
-                for l in range(length):
-                    data = [] #row data
-                    #for each column
-                    for i in range(1,9):
-                        if col_data[3*(i-1)+1][l] != '':
-                            data.append(Ctuple(True,col_data[3*(i-1)+1][l],col_data[3*(i-1)][l],''))
-                        else:
-                            data.append(Ctuple(False,'',col_data[3*(i-1)][l],''))                                   
-                    table.append(data)
-                Vtable.append(table)	
-            BigData.append(DataTriple(Vtable,Vtime,Vlog))
-                    
-            return render_to_response('abb.html', {'election':e, 'TableNum': tablenums, 'col_names':col_names, 'BigData': BigData, 'current':tabnum},  context_instance=RequestContext(request))         
-                    
 
 def handle_uploaded_file(e, zfile,reader,sig, t):
     Aabblist = e.abbdata_set.filter(table = t)
@@ -503,80 +422,6 @@ def upload(request, eid = 0):
         return render_to_response('404.html')
 
 
-    
-@csrf_exempt
-def upload_bak(request, eid = 0):
-    try:
-	e = Election.objects.get(EID=eid)
-    except Election.DoesNotExist:
-	return HttpResponse('The election ID is invalid!')
-    if request.method == 'POST':
-        zfile = request.FILES['inputfile']
-        sig = request.FILES['sig']
-        ## Sanity checks...
-
-
-
-
-
-        
-        #processing upload files
-	z = zipfile.ZipFile(zfile, 'r')
-	for name in z.namelist():
-                if name.endswith(".txt"):
-			opfile = z.read(name)
-		else:
-			datafile = z.read(name)
-        ## Record update log
-	notes = timezone.now().isoformat(' ')+"-"+opfile
-	zfile.name = notes+".zip"
-	sig.name = "Sig_"+notes+".txt"
-        new_op = UpdateInfo(election = e, text = notes, file = zfile, sig = sig)
-        
-        flag = 0
-        if opfile == 'table':	#tables
-            flag = 1    
-            reader = datafile.splitlines()
-            #populate BBA database handle CSV file myself
-            table = reader[0].split(',')[0]
-            counter = handle_uploaded_file(e, zfile, reader, sig, table)
-            new_op.table = table
-        new_op.save() # save the update log here, since I also table info 
-        aux = e.auxiliary_set.all()#at most one
-        if len(aux) == 0:#no aux
-            new_aux = Auxiliary(election = e)
-            new_aux.save()
-            au = new_aux
-        else:
-            au = aux[0]    
-        if opfile == 'random1':#first randomness
-            flag = 1   
-            au.randomnessA = zfile
-            au.rand_sigA = sig
-            au.save()
-	elif opfile == 'random2':#second randomness
-            flag = 1   
-            au.randomnessB = zfile
-            au.rand_sigB = sig
-            au.save()
-        elif opfile == 'vbb':#vbb data
-            flag = 1   
-            au.vbb_data = zfile
-            au.vbb_sig = sig
-            au.save()
-        elif opfile == 'def': #election def
-            flag = 1   
-            au.election_def = zfile
-            au.def_sig = sig
-            au.save()
-        if flag == 1:
-            return HttpResponse('The data has been uploaded to ABB.')
-        else:
-            return HttpResponse('Sorry, the operation code is not recognized.')
-        
-    else:
-        return render_to_response('404.html')
-
 
 @csrf_exempt
 def init(request):
@@ -611,4 +456,5 @@ def init(request):
     
     
     
+
 
