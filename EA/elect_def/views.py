@@ -115,7 +115,7 @@ def index(request):
     	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition "+eid, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     	output,err = p.communicate()
 	#celery prepare ballots
-	prepare_ballot.delay(new_e, int(total)+1,len(opts))
+	prepare_ballot.delay(new_e, int(total),len(opts))
         return render_to_response('confirm.html',{'name':name,'data':data, 'email':email,'VBB':VBB_url,'ABB':ABB_url})
     else:
         return render_to_response('def.html', {'name':name}, context_instance=RequestContext(request))

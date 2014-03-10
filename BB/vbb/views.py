@@ -48,6 +48,11 @@ def empty(request):
 def send_request(e):
 	#tally
 	votes = e.vbb_set.all()
+	#if nobody voted directly return
+	if len(votes)==0:
+		e.tally = True
+        	e.save()
+		return 0
 	opts = e.choice_set.all()
 	n = len(opts)
 	#get all for fast disk IO
@@ -116,7 +121,7 @@ def send_request(e):
 	#store result
 	e.tally = True
 	e.save()
-
+	return 1
 
 def verify_code(e,s,vcode):
 	codelist = []
@@ -309,32 +314,33 @@ def client(request, eid = 0):
     except Election.DoesNotExist:
 	return HttpResponse('The election ID is invalid!')
     if request.method == 'POST':
-	feedback = []
-        # maximum 50 options
-        for i in range(1,51):
-            temp = request.POST.get('feedback'+str(i),'')
-            if temp != '':
-                feedback.append(temp)
+	if request.is_ajax():#ajax post
+	    feedback = []
+            # maximum 50 options
+            for i in range(1,51):
+                temp = request.POST.get('feedback'+str(i),'')
+                if temp != '':
+                    feedback.append(temp)
+                else:
+                    break
+            code = request.POST["code"].upper()
+            serial = request.POST["serial"].upper()
+            codelist,receipt = verify_code(e,serial,code)
+            if receipt != "":
+                #add the code to DB
+                new_entry = Vbb(election = e, serial = serial, votecode = code)
+                new_entry.save()
+                #store the dual ballot feedback
+                for x in feedback:
+                    feed = x.split(",")
+                    if feed[0] in codelist:
+                        balls = Dballot(vbb = new_entry, serial = serial, code = feed[0], checked = True, value = feed[1])
+                        balls.save()
+                return HttpResponse(receipt)
             else:
-                break
-	code = request.POST["options"].upper()
-	serial = request.POST["serial"].upper()
-	codelist,receipt = verify_code(e,serial,code)
-        if receipt != "":
-            #add the code to DB
-            new_entry = Vbb(election = e, serial = serial, votecode = code)
-            new_entry.save()
-            #store the dual ballot feedback
-            for x in feedback:
-		feed = x.split(",")
-		if feed[0] in codelist:
-            	    balls = Dballot(vbb = new_entry, serial = serial, code = feed[0], checked = True, value = feed[1])
-                    balls.save()
-
-            return render_to_response('thanks.html')
-	else:
-	    return render_to_response('client_reject.html')
-        
+                return HttpResponse('invalid code')
+	#404 if not ajax for security
+	return render_to_response('404.html')        
     else:
         return render_to_response('404.html')
 

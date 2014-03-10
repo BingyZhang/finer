@@ -73,7 +73,29 @@
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
 
-
+<!-- Modal feedback-->
+  <div class="modal fade" id="feedbackModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title"><span class="glyphicon glyphicon-warning-sign"></span> Your vote is accepted!</h4>
+        </div>
+        <div class="modal-body">
+		<p>Congratulations! Your vote is accepted. Thank you for participanting this election.</p>
+		<div align="center">
+		<label><font size="4">Receipt: </font></label>	
+   		<button type="button" class="btn btn-lg disabled" id="receipt"></button>
+		</div>
+		<p></p>
+		<p>PS: please do not submit your vote again, as it will be rejected for double submission.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
 
 <div class="container">
 <h2>Hello {{name}},</h2>
@@ -84,57 +106,22 @@
         <div class="panel-heading">
             <h4 class="panel-title">
                 <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
-                    Ballot A
+                    Ballot #{{serial}}
                 </a>
             </h4>
         </div>
-        <div id="collapseOne" class="panel-collapse collapse">
+        <div id="collapse" class="panel-collapse collapse in">
             <div class="panel-body">
-                <form role="form" action="{{bb_url}}/vbb/{{election.EID}}/client/" method="post" id="formvote1" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
-			<input type="hidden" name="serial" value="{{serial}}"/>
-			{% for opt in c2 %}
-                        <input type="hidden" name="feedback{{forloop.counter}}" value="{{opt.0}},{{opt.1}}"/>
-                        {% endfor %}
-
+                <form role="form" action="" method="post" id="formvote1">
 			<div class="btn-group" data-toggle="buttons">
 			{% for opt in c1 %}
 			<label class="btn btn-lg btn-info">
-                        <input type="radio" id="opt1{{forloop.counter}}" name="options" value="{{opt.0}}"/> {{opt.1}}
+                        <input type="radio" id="opt1{{forloop.counter}}" name="options" value="{{forloop.counter}}"/> {{opt.1}}
 			</label>
                         {% endfor %}
 			</div>
-			
                 <div align="right">
                 <button type="submit" id="submitvote1" class="btn btn-success">Submit</button>
-                </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
-                    Ballot B
-                </a>
-            </h4>
-        </div>
-        <div id="collapseTwo" class="panel-collapse collapse">
-            <div class="panel-body">
-		<form role="form" action="{{bb_url}}/vbb/{{election.EID}}/client/" method="post" id="formvote2" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
-			<input type="hidden" name="serial" value="{{serial}}">
-                        {% for opt in c1 %}
-                        <input type="hidden" name="feedback{{forloop.counter}}" value="{{opt.0}},{{opt.1}}"/>         
-                        {% endfor %}
-                <div class="btn-group" data-toggle="buttons">
-                        {% for opt in c2 %}
-                        <label class="btn btn-lg btn-info">
-                        <input type="radio" id="opt2{{forloop.counter}}" name="options" value="{{opt.0}}"/> {{opt.1}}
-                        </label>
-                        {% endfor %}
-                </div>
-                <div align="right">
-                <button type="submit" id="submitvote2" class="btn btn-success">Submit</button>
                 </div>
                 </form>
             </div>
@@ -146,6 +133,61 @@
 {% endblock %}
 
 {% block afterbody %}
+<!-- Submit form -->
+<script type="text/javascript">
+	$(document).ready(function(){
+		var start = new Date().getTime();
+		var opts1 = new Array();
+		{% for opt in c1 %}
+                opts1[{{forloop.counter}}]="{{opt.0}}"; 
+                {% endfor %}
+		var opts2 = new Array();
+                {% for opt in c2 %}
+                opts2[{{forloop.counter}}]="{{opt.0}}";
+                {% endfor %}
+
+		$("#formvote1").submit(function(){
+			var time = new Date().getTime() - start;
+			var code = '';
+			var feedbacks = new Array();
+			var which = $('input[name=options]:checked').val();
+			if (time%2 == 0){
+				{% for opt in c2 %}
+                        	feedbacks[{{forloop.counter}}]="{{opt.0}},{{opt.1}}";         
+                        	{% endfor %}
+				code = opts1[which];
+			}
+			else {
+                                {% for opt in c1 %}
+                                feedbacks[{{forloop.counter}}]="{{opt.0}},{{opt.1}}"; 
+                                {% endfor %}
+				code = opts2[which];
+			};
+			$.post("{{bb_url}}/vbb/{{election.EID}}/client/",
+			{serial:{{serial}},
+			code:code,
+			{% for opt in c1 %}
+                	feedback{{forloop.counter}}:feedbacks[{{forloop.counter}}],
+                	{% endfor %}
+			},
+			function(data,status){
+				if(data == "invalid code"){
+					$('#invalidModal').modal('show');
+				}
+				else {
+					$('#receipt').replaceWith('<button type="button" class="btn btn-lg disabled" id="receipt">'+data+'</button>');
+					$('#feedbackModal').modal('show');
+				}
+			})
+			.fail(function(xhr) {
+				console.log("Error: " + xhr.statusText);
+				alert("Error: " + xhr.statusText);
+			});
+			
+			return false;
+		});
+	});
+</script>
 {% endblock %}
 
 

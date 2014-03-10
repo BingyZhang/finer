@@ -52,7 +52,11 @@ def login(request):
 			ended = True
 		else:
 			ended = False
-		elections.append({'e':e,'ended':ended})
+		if e.was_started():
+			started = True
+		else:
+			started = False
+		elections.append({'e':e,'started':started,'ended':ended})
     return render_to_response('login.html',{'name':name, 'elist':elections, 'BB_URL':BB_URL, 'a':user_Paffiliation,'b':user_title,'c':user_Porg})
 
 
@@ -83,6 +87,8 @@ def vote(request, eid = 0):
         e = Election.objects.get(EID=eid)
     except Election.DoesNotExist:
         return HttpResponse('The election ID is invalid!')
+    if not e.prepared:
+	return HttpResponse('The ballots are not prepared yet.')
     time = 0
     options = e.choice_set.values('text')
     opts = [x['text'] for x in options]

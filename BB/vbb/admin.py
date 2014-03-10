@@ -5,12 +5,12 @@ from vbb.models import Election, Choice, Vbb, Dballot, Bba, Randomstate
 # Register your models here.
 class VbbAdmin(admin.ModelAdmin):
     list_display = ('serial', 'votecode','date')
-    list_filter = ['serial']
+    list_filter = ['election']
     search_fields = ['serial']
 
 class DballotAdmin(admin.ModelAdmin):
     list_display = ('serial', 'code', 'value')
-    list_filter = ['serial']
+    list_filter = ['vbb']
     search_fields = ['serial']
 
 class ElectionAdmin(admin.ModelAdmin):
@@ -20,17 +20,17 @@ class ElectionAdmin(admin.ModelAdmin):
 
 class ChoiceAdmin(admin.ModelAdmin):
     list_display = ['text']
-    list_filter = ['text']
+    list_filter = ['election']
     search_fields = ['text']
 
 class BbaAdmin(admin.ModelAdmin):
     list_display = ['serial','key']
-    list_filter = ['serial']
+    list_filter = ['election']
     search_fields = ['serial']
 
 class RandomAdmin(admin.ModelAdmin):
     list_display = ['notes','random']
-    list_filter = ['notes']
+    list_filter = ['election']
     search_fields = ['notes']
 
 admin.site.register(Vbb, VbbAdmin)
