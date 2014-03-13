@@ -119,7 +119,7 @@ def prepare_ballot(e, total, n, emails):
     options = e.choice_set.values('text')
     opts = [x['text'] for x in options]
     #get all the unassigned ballots
-    unused = Ballot.objects.filter(election = e, used = False)
+    unused = Ballot.objects.filter(election = e)# all are not used
     counter = 0
     for voter in emails:
 	#generate random token
@@ -127,13 +127,14 @@ def prepare_ballot(e, total, n, emails):
         stoken = base36encode(token)#no padding 128 bit
 	b = unused[counter]
 	counter += 1
-	assign = Assignment(election = e, vID = voter, serial = b.serial)
+	email = voter.rstrip()
+	assign = Assignment(election = e, vID = stoken+email, serial = b.serial)
 	assign.save()
 	#mark as used
 	b.used = True
 	b.save()
 	#store token
-	new_t = Tokens(election = e, token = stoken, email = voter)
+	new_t = Tokens(election = e, token = stoken, email = email)
 	new_t.save()
 	#get codes and options
     	codes1 = b.codes1.split(',')
@@ -164,7 +165,7 @@ def prepare_ballot(e, total, n, emails):
 	emailbody+= "Client url: "+CLIENT_URL+e.EID+"/"+stoken+"/\n"
     	emailbody+= "\nFINER Ballot Distribution Server\n"
     	#send email		
-    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Ballot for Election: "+e.question, emailbody,voter],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Ballot for Election: "+e.question, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     	output,err = p.communicate()
     #send ABB CSV data
     #random key for column 1

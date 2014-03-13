@@ -232,7 +232,7 @@ def pubdef(request):
         emailbody+= "\nFINER  Election Authority\n"
 
         #send email         
-    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition "+eid, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition: "+q, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     	output,err = p.communicate()
         #celery prepare ballots
         prepare_ballot.delay(new_e, int(total),len(opts), voter_emails)

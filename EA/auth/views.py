@@ -175,7 +175,7 @@ def client(request, eid = 0,token = 0):
     if e.was_ended():
 	running = 2
     #get ballot
-    assign = e.assignment_set.filter(vID=record.email)[0]
+    assign = e.assignment_set.get(vID=record.token+record.email)
     b = e.ballot_set.get(serial = assign.serial)
     #get codes and options
     codes1 = b.codes1.split(',')
