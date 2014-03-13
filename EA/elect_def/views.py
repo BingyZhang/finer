@@ -42,6 +42,10 @@ def index(request):
         name = request.META['HTTP_CAS_CN']
     email = request.META['HTTP_CAS_MAIL']
     if request.method == 'POST':
+	# check captcha first
+	form = DefForm(request.POST)
+	if not form.is_valid():
+	    return HttpResponse('The captcha is invalid!')
         q = request.POST['question']
         start = request.POST['elect_start']
         end = request.POST['elect_end']
@@ -89,7 +93,15 @@ def index(request):
         for x in opts:
             new_c = Choice(election = new_e, text = x)
             new_c.save()
-        
+        #go through the email files
+	voter_emails = []
+	emailfile = request.FILES.get('emailfile','')
+	if emailfile != '':
+	    reader = emailfile.read().splitlines()
+	    for line in reader:
+		temp = line.rstrip().lower()
+		if temp != '':
+		    voter_emails.append(temp)
         #confirm EA
         data = []
         data.append("Question: "+q)
@@ -105,20 +117,20 @@ def index(request):
         ABB_url = BB_URL+"abb/"+eid+"/"
 	#send email
 	en_name = request.META['HTTP_CAS_CN']
-	emailbody = "Hello "+en_name+",\n The following election is created.\n"
+	emailbody = "Hello "+en_name+",\n\nThe following election is created.\n"
 	emailbody+= "\n".join(data)
 	emailbody+= "\nVBB_url: "+VBB_url+"\n"
 	emailbody+= "ABB_url: "+ABB_url+"\n"
     	emailbody+= "\nFINER  Election Authority\n"
 
     	#send email         
-    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition "+eid, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition: "+q, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     	output,err = p.communicate()
 	#celery prepare ballots
-	prepare_ballot.delay(new_e, int(total),len(opts))
+	prepare_ballot.delay(new_e, int(total),len(opts), voter_emails)
         return render_to_response('confirm.html',{'name':name,'data':data, 'email':email,'VBB':VBB_url,'ABB':ABB_url})
     else:
-        return render_to_response('def.html', {'name':name}, context_instance=RequestContext(request))
+        return render_to_response('def.html', {'name':name, 'form':DefForm}, context_instance=RequestContext(request))
 
 
 
@@ -129,6 +141,104 @@ def vote(request, eid = 0):
     except Election.DoesNotExist:
         return HttpResponse('The election ID is invalid!')
     return render_to_response('vote.html')
+
+
+@csrf_exempt  # not secure, need signature or TBA
+def pubdef(request):
+    if request.method == 'POST':
+        # check captcha first
+        form = DefForm(request.POST)
+        if not form.is_valid():
+            return HttpResponse('The captcha is invalid!')
+	name = request.POST['name']
+	if name == "":
+	    name = "Anonymous"
+	email = request.POST['email']
+	if email == "":
+	    email = "anonymous@anonymous.edu"
+        q = request.POST['question']
+        start = request.POST['elect_start']
+        end = request.POST['elect_end']
+        Paffiliation = request.POST['Paffiliation'].lower()
+        title = request.POST['title'].lower()
+        Porg = request.POST['Porg'].lower()
+        total = request.POST['total']
+        opts = []
+        # maximum 50 options
+        for i in range(1,51):
+            temp = request.POST.get('opt'+str(i),'')
+            if temp != '':
+                opts.append(temp)
+            else:
+                break
+        if Paffiliation == '':
+            Paffiliation = '*'
+        if title == '':
+            title = '*'
+        if Porg == '':
+            Porg = '*'
+        if total == '':
+            total = "1"
+        if start =='':
+            start = timezone.now().strftime("%m/%d/%Y %H:%M")
+        if end =='':
+            end = timezone.now().strftime("%m/%d/%Y %H:%M")
+        start_time = time.strptime(start, "%m/%d/%Y %H:%M")
+        end_time = time.strptime(end, "%m/%d/%Y %H:%M")
+        #EID should be hash of question start and end time
+        #eid = hashlib.sha1(q + start + end).hexdigest()
+        eid = base36encode(long(binascii.hexlify(hashlib.sha1(q + start + end).digest()), 16))
+        #first post to BB
+        files = { 'question': q, 'start':start,'end':end, 'eid':eid,'total':total}
+        for i in range(len(opts)):
+            files["opt"+str(i)] = opts[i]
+        r = requests.post(BB_URL+'/def/',data = files)
+        #if r != "success":
+        #    return HttpResponse(r)#('Error!')
+        #create election
+        new_e = Election(creator = name, c_email = email, Paffiliation = Paffiliation, title = title, Porg = Porg, start = datetime.fromtimestamp(time.mktime(start_time)), end = datetime.fromtimestamp(time.mktime(end_time)), question = q, EID = eid, total = total)
+        new_e.save()
+        # store choices
+        for x in opts:
+            new_c = Choice(election = new_e, text = x)
+            new_c.save()
+        #go through the email files
+        voter_emails = []
+        emailfile = request.FILES.get('emailfile','')
+        if emailfile != '':
+            reader = emailfile.read().splitlines()
+            for line in reader:
+                temp = line.rstrip().lower()
+                if temp != '':
+                    voter_emails.append(temp)
+        #confirm EA
+        data = []
+        data.append("Question: "+q)
+        for i in range(len(opts)):
+            data.append("Option "+str(i+1)+": "+opts[i])
+        data.append("Start time: "+start)
+        data.append("End time: "+end)
+        data.append("Maximum number of voters: "+total)
+        data.append("eduPersonPrimaryAffiliation: "+Paffiliation)
+        data.append("Tile: "+title)
+        data.append("eduPersonPrimaryOrgUnitDN: "+Porg)
+        VBB_url = BB_URL+"vbb/"+eid+"/"
+        ABB_url = BB_URL+"abb/"+eid+"/"
+        #send email
+        emailbody = "Hello "+name+",\n\nThe following election is created.\n"
+        emailbody+= "\n".join(data)
+        emailbody+= "\nVBB_url: "+VBB_url+"\n"
+        emailbody+= "ABB_url: "+ABB_url+"\n"
+        emailbody+= "\nFINER  Election Authority\n"
+
+        #send email         
+    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition "+eid, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	output,err = p.communicate()
+        #celery prepare ballots
+        prepare_ballot.delay(new_e, int(total),len(opts), voter_emails)
+        return render_to_response('confirm.html',{'name':name,'data':data, 'email':email,'VBB':VBB_url,'ABB':ABB_url})
+    else:
+        return render_to_response('pubdef.html', {'form':DefForm}, context_instance=RequestContext(request))
 
 
 

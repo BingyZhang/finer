@@ -43,7 +43,7 @@
 		</div>
         <a class="btn btn-primary" type="button" href="export/" target="_blank">Export Data</a>
         </p>
-		<div class="col-md-6">
+		<div class="col-md-7">
 		{% if running == 0 %}
 			<button type="button" class="btn btn-warning btn-lg" disabled="disabled"><span class="glyphicon glyphicon-list-alt"></span> The election will start at {{election.start}}</button>
 		{% endif %}
@@ -78,7 +78,7 @@
 		{% endif %}
 		</div>
 		
-		<div class="col-md-6">
+		<div class="col-md-5">
 			<p>Status: {{ data|length }}/{{election.total}} has voted.</p>
 			<div class="progress progress-striped active">
   			<div class="progress-bar"  role="progressbar" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ progress }}%">

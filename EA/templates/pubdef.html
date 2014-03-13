@@ -20,11 +20,17 @@
 
 {% block content %}
 <div class="container">
-<h1>Welcome {{name}},</h1>
 <div align="center" class="highlight">
     <h1>Election Definition Configuration</h1>
 <form role="form" action="" method="post" id="def" accept-charset="utf-8" enctype="multipart/form-data">{% csrf_token %}
 <div class="form-group has-success">
+    <label class="control-label" for="inputSuccess"><font size="6">Creator Information</font></label>
+    <div>
+        <label>Name: </label>
+        <input style="width:30%" type="text" name="name" id="name" value="" />
+        <label>&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp Email: </label>
+        <input style="width:30%" type="text" name="email" id="email" value="" />
+    </div>
     <label class="control-label" for="inputSuccess"><font size="6">Election Question</font></label>
     <textarea rows="5" class="form-control" id="inputSuccess" cols="80" style="width:100%" name="question"/></textarea>
 </div>

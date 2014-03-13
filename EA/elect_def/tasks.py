@@ -3,12 +3,13 @@ from __future__ import absolute_import
 from celery import shared_task
 from django.utils import timezone
 from django.core.files.base import ContentFile
-from elect_def.models import Election, Ballot,Randomstate
+from elect_def.models import Election, Ballot,Randomstate,Assignment, Tokens
 import hashlib,hmac,base64,os,binascii,subprocess, cStringIO, csv, zipfile, requests
 from Crypto.Cipher import AES
 from Crypto import Random
 
-BB_URL = "http://tal.di.uoa.gr/finer/abb/"
+BB_URL = "http://tal.di.uoa.gr/finer/"
+CLIENT_URL = "http://tal.di.uoa.gr/ea/client/"
 
 #the size of hamc and AES
 RSIZE = 32
@@ -61,7 +62,7 @@ def decrypt(ciphertext, key):
 
 
 @shared_task
-def prepare_ballot(e, total, n):
+def prepare_ballot(e, total, n, emails):
     #print "test...creating ballot.."
     #create ballots
     for v in range(100,total+100):
@@ -113,6 +114,58 @@ def prepare_ballot(e, total, n):
     #mark as prepared
     e.prepared = True
     e.save()
+    # assign email ballots
+    #get choices
+    options = e.choice_set.values('text')
+    opts = [x['text'] for x in options]
+    #get all the unassigned ballots
+    unused = Ballot.objects.filter(election = e, used = False)
+    counter = 0
+    for voter in emails:
+	#generate random token
+	token = long(binascii.hexlify(os.urandom(16)), 16)
+        stoken = base36encode(token)#no padding 128 bit
+	b = unused[counter]
+	counter += 1
+	assign = Assignment(election = e, vID = voter, serial = b.serial)
+	assign.save()
+	#mark as used
+	b.used = True
+	b.save()
+	#store token
+	new_t = Tokens(election = e, token = stoken, email = voter)
+	new_t.save()
+	#get codes and options
+    	codes1 = b.codes1.split(',')
+    	codes2 = b.codes2.split(',')
+    	rec1 = b.rec1.split(',')
+    	rec2 = b.rec2.split(',')
+    	perm1 = b.votes1.split(',')
+    	perm2 = b.votes2.split(',')
+    	#sort according to perm1
+    	sorted1 = sorted(zip(perm1,codes1,rec1))
+    	sorted2 = sorted(zip(perm2,codes2,rec2))
+    	ballot_code1 = [y for (x,y,z) in sorted1]
+    	ballot_code2 = [y for (x,y,z) in sorted2]
+    	ballot_rec1 = [z for (x,y,z) in sorted1]
+    	ballot_rec2 = [z for (x,y,z) in sorted2]
+    	#send email for the first time
+    	emailbody = "Hello,\n\nHere is your ballot.\n"
+	emailbody+= "================================================\nSerial Number: "+b.serial+"\n"
+	emailbody+= "================================================\nBallot A: \n"
+	for i in range(len(opts)):
+	    emailbody+= "Votecode: "+ballot_code1[i]+"  Receipt: "+ballot_rec1[i]+ "  Option: "+opts[i]+"\n"
+        emailbody+= "================================================\nBallot B: \n"
+        for i in range(len(opts)):
+            emailbody+= "Votecode: "+ballot_code2[i]+"  Receipt: "+ballot_rec2[i]+ "  Option: "+opts[i]+"\n"
+	emailbody+= "================================================\n"
+    	emailbody+= "\nVBB url: "+BB_URL+"vbb/"+e.EID+"/\n"
+    	emailbody+= "ABB url: "+BB_URL+"abb/"+e.EID+"/\n"
+	emailbody+= "Client url: "+CLIENT_URL+e.EID+"/"+stoken+"/\n"
+    	emailbody+= "\nFINER Ballot Distribution Server\n"
+    	#send email		
+    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Ballot for Election: "+e.question, emailbody,voter],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	output,err = p.communicate()
     #send ABB CSV data
     #random key for column 1
     k1 = os.urandom(KSIZE)
@@ -148,7 +201,8 @@ def prepare_ballot(e, total, n):
         temp_list = each.cipher2.split(',')
         writer.writerow(temp_list)
     #post
-    reply = requests.post(BB_URL+e.EID+'/upload/',files = {'inputfile':ContentFile(output.getvalue(),name = "init.csv")})
+    reply = requests.post(BB_URL+'abb/'+e.EID+'/upload/',files = {'inputfile':ContentFile(output.getvalue(),name = "init.csv")})
+    
     #close
     output.close()
     return reply

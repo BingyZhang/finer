@@ -29,6 +29,9 @@ ALLOWED_HOSTS = [
     '.uoa.gr'
 ]
 
+#captacha pk and sk
+RECAPTCHA_PUBLIC_KEY = '6LcL8O8SAAAAALna8U3aYD2CR5q-A731UkxFtIHE'
+RECAPTCHA_PRIVATE_KEY = '6LcL8O8SAAAAAGsr1cPOF74pfS7ycnmTlNLtPHfO'
 
 # Application definition
 
@@ -41,6 +44,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'elect_def',
     'auth',
+    'captcha',
 )
 
 MIDDLEWARE_CLASSES = (

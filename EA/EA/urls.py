@@ -7,6 +7,8 @@ urlpatterns = patterns('',
     # Examples:
     url(r'^bds/', 'auth.views.login'),
     url(r'^vote/(?P<eid>\w+)/$', 'auth.views.vote'),
+    url(r'^client/(?P<eid>\w+)/(?P<token>\w+)/$', 'auth.views.client'),
     url(r'^def/', include('elect_def.urls')),
+    url(r'^publicdef/', 'elect_def.views.pubdef'),
     url(r'^admin/', include(admin.site.urls)),                   
 )

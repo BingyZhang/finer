@@ -315,6 +315,20 @@ def client(request, eid = 0):
 	return HttpResponse('The election ID is invalid!')
     if request.method == 'POST':
 	if request.is_ajax():#ajax post
+	    #check election is running?
+	    running = 0
+	    if e.was_started():
+		running = 1
+	    if e.was_ended():
+		running = 2
+		if not e.request:
+		    send_request(e)
+		    e.request = True
+		    e.save()
+	    if e.pause:
+		running = 10
+	    if running != 1:
+		return HttpResponse("invalid code")
 	    feedback = []
             # maximum 50 options
             for i in range(1,51):

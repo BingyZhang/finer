@@ -110,13 +110,13 @@
                 </a>
             </h4>
         </div>
-        <div id="collapse" class="panel-collapse collapse in">
+        <div id="collapseOne" class="panel-collapse collapse in">
             <div class="panel-body">
                 <form role="form" action="" method="post" id="formvote1">
 			<div class="btn-group" data-toggle="buttons">
 			{% for opt in c1 %}
 			<label class="btn btn-lg btn-info">
-                        <input type="radio" id="opt1{{forloop.counter}}" name="options" value="{{forloop.counter}}"/> {{opt.1}}
+                        <input type="radio" {% if forloop.first %}checked="checked"{% endif %} id="opt1{{forloop.counter}}" name="options" value="{{forloop.counter}}"/> {{opt.1}}
 			</label>
                         {% endfor %}
 			</div>

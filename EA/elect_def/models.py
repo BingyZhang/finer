@@ -54,6 +54,12 @@ class Assignment(models.Model):
         def __str__(self):
                 return str(self.vID)
 
+class Tokens(models.Model):
+        election = models.ForeignKey(Election)
+        token = models.CharField(max_length=1024)
+        email = models.CharField(max_length=1024)
+        def __str__(self):
+                return str(self.token)
 
 class Randomstate(models.Model):
         election = models.ForeignKey(Election)
