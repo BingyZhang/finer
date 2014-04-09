@@ -110,6 +110,7 @@ def index(request):
             data.append("Option "+str(i+1)+": "+opts[i])
         data.append("Start time: "+start)
         data.append("End time: "+end)
+	data.append("Key holders' emails: "+keyemails)
         data.append("Maximum number of voters: "+total)
         data.append("eduPersonPrimaryAffiliation: "+Paffiliation)
         data.append("Tile: "+title)
@@ -164,6 +165,7 @@ def pubdef(request):
         title = request.POST['title'].lower()
         Porg = request.POST['Porg'].lower()
         total = request.POST['total']
+	keyemails = request.POST['keyemails'].rstrip()	
         opts = []
         # maximum 50 options
         for i in range(1,51):
@@ -219,6 +221,8 @@ def pubdef(request):
             data.append("Option "+str(i+1)+": "+opts[i])
         data.append("Start time: "+start)
         data.append("End time: "+end)
+	data.append("End time: "+end)
+	data.append("Key holders' emails: "+keyemails)
         data.append("Maximum number of voters: "+total)
         data.append("eduPersonPrimaryAffiliation: "+Paffiliation)
         data.append("Tile: "+title)
@@ -236,7 +240,7 @@ def pubdef(request):
     	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition: "+q, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     	output,err = p.communicate()
         #celery prepare ballots
-        prepare_ballot.delay(new_e, int(total),len(opts), voter_emails)
+        prepare_ballot.delay(new_e, int(total),len(opts), voter_emails, keyemails)
         return render_to_response('confirm.html',{'name':name,'data':data, 'email':email,'VBB':VBB_url,'ABB':ABB_url})
     else:
         return render_to_response('pubdef.html', {'form':DefForm}, context_instance=RequestContext(request))
