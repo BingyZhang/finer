@@ -62,7 +62,7 @@ def decrypt(ciphertext, key):
 
 
 @shared_task
-def prepare_ballot(e, total, n, emails):
+def prepare_ballot(e, total, n, emails, keyemails):
     #print "test...creating ballot.."
     #create ballots
     for v in range(100,total+100):
@@ -173,6 +173,20 @@ def prepare_ballot(e, total, n, emails):
     sk1 = base64.b64encode(k1)
     new_r = Randomstate(election = e, notes = "k1",random = sk1)
     new_r.save()
+
+###send key to key holders
+    emailbody = "Dear Key Holder,\n\n Your private key is:\n"
+    emailbody+= "================================================\n"	
+    emailbody+= sk1+"\n"
+    emailbody+= "================================================\n"
+    emailbody+= "\nYour Tally URL: "+BB_URL+"keyholder/"+e.EID+"/\n"
+    emailbody+= "\nFINER  Election Authority\n"
+    email = keyemails
+    #send email         
+    p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Private Key for Election Definition "+e.EID, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    output,err = p.communicate()
+##########################
+
     #create csv file and encrypt the codes
     output = cStringIO.StringIO() ## temp output file
     writer = csv.writer(output, dialect='excel')

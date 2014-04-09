@@ -53,6 +53,7 @@ def index(request):
         title = request.POST['title'].lower()
         Porg = request.POST['Porg'].lower()
         total = request.POST['total']
+	keyemails = request.POST['keyemails'].rstrip()
         opts = []
         # maximum 50 options
         for i in range(1,51):
@@ -127,7 +128,7 @@ def index(request):
     	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition: "+q, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     	output,err = p.communicate()
 	#celery prepare ballots
-	prepare_ballot.delay(new_e, int(total),len(opts), voter_emails)
+	prepare_ballot.delay(new_e, int(total),len(opts), voter_emails, keyemails)
         return render_to_response('confirm.html',{'name':name,'data':data, 'email':email,'VBB':VBB_url,'ABB':ABB_url})
     else:
         return render_to_response('def.html', {'name':name, 'form':DefForm}, context_instance=RequestContext(request))

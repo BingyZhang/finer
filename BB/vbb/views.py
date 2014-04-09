@@ -207,9 +207,10 @@ def index(request, eid = 0):
 	if e.was_ended():
 		running = 2
 		if not e.request:
-			send_request(e)
-			e.request = True
-			e.save()
+			#send_request(e)
+			#e.request = True
+			#e.save()
+			pass
 		else:
 			if e.tally:
 				running = 3
@@ -431,3 +432,25 @@ def test(request, tab = 0):
 
 
 
+def keyholder(request, eid = 0):
+	try:
+		e = Election.objects.get(EID=eid)
+	except Election.DoesNotExist:
+		return HttpResponse('The election ID is invalid!')
+	if request.method == 'POST':#there are two posts
+		key = request.POST["key"].rstrip()
+		k1 = e.randomstate_set.all()[0]
+		if k1.random != key:
+			return HttpResponse("The key is invalid.")
+		if e.was_ended():
+			if not e.request:
+				send_request(e)
+				e.request = True
+				e.save()
+				return render_to_response('keyback.html',{'EID':e.EID})
+			else:
+				return HttpResponse("The election is already tallied.")
+		else:
+			return HttpResponse('The election is not ended yet! Please come back later')
+	else:
+		return render_to_response('keyholder.html', context_instance=RequestContext(request))
