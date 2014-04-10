@@ -14,7 +14,7 @@
 	         <td><div style="word-wrap: break-word">
             {% if forloop.first %}
                 {% if entry.serial %}
-            <button style="width: 80px" type="button" class="btn btn-success" data-toggle="popover"
+            <button style="width: 70px" type="button" class="btn btn-pink" data-toggle="popover"
       data-content="{{entry.bit}}">{{entry.serial}}</button>
                 {% endif %}
             {% endif %}
@@ -28,19 +28,23 @@
 			{% endif%}
             {% endif %}
             {% if forloop.counter = 3 %}
-            <button style="width: 100px" type="button" class="btn btn-danger" data-toggle="popover"
+            <button style="width: 95px" type="button" class="btn btn-danger" data-toggle="popover"
                  data-content="{{entry.cipher}}">Encrypted</button>
             {% endif %}
             {% if forloop.counter = 4 %}
-            <button style="width: 100px" type="button" class="btn btn-warning" data-toggle="popover"
+            <button style="width: 95px" type="button" class="btn btn-warning" data-toggle="popover"
                  data-content="{{entry.aux}}">Committed</button>
             {% endif %}
             {% if forloop.counter = 5 and entry.mark %}
-            <button style="width: 100px" type="button" class="btn btn-success">{% ifequal entry.mark "Voted" %}<span class="glyphicon glyphicon-ok"></span>    {% endifequal %} {{entry.mark}}</button>
+            <button style="width: 100px" type="button" class="btn btn-sample">{% ifequal entry.mark "Voted" %}<span class="glyphicon glyphicon-ok"></span>    {% endifequal %} {{entry.mark}}</button>
             {% endif %}
             {% if forloop.counter = 6 and entry.rand  %}
-            <button style="width: 80px" type="button" class="btn" data-toggle="popover"
+            <button style="width: 60px" type="button" class="btn" data-toggle="popover"
                  data-content="{{entry.rand}}">Coins</button>
+            {% endif %}
+	    {% if forloop.counter = 7 and entry.post  %}
+            <button style="width: 75px" type="button" class="btn btn-success" data-toggle="popover"
+                 data-content="{{entry.post}}">Verified</button>
             {% endif %}
 		 </div></td>
 	      {% endfor %}

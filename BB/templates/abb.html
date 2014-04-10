@@ -2,6 +2,103 @@
 {% block title %}Audit Bulletin Board{% endblock %}
 {% load staticfiles %}
 
+{% block extrascript %}
+<!-- Button Color -->
+<style type="text/css">
+.btn-pink { 
+  color: #ffffff; 
+  background-color: #BD318C; 
+  border-color: #731768; 
+} 
+ 
+.btn-pink:hover, 
+.btn-pink:focus, 
+.btn-pink:active, 
+.btn-pink.active, 
+.open .dropdown-toggle.btn-pink { 
+  color: #ffffff; 
+  background-color: #8F316E; 
+  border-color: #731768; 
+} 
+ 
+.btn-pink:active, 
+.btn-pink.active, 
+.open .dropdown-toggle.btn-pink { 
+  background-image: none; 
+} 
+ 
+.btn-pink.disabled, 
+.btn-pink[disabled], 
+fieldset[disabled] .btn-pink, 
+.btn-pink.disabled:hover, 
+.btn-pink[disabled]:hover, 
+fieldset[disabled] .btn-pink:hover, 
+.btn-pink.disabled:focus, 
+.btn-pink[disabled]:focus, 
+fieldset[disabled] .btn-pink:focus, 
+.btn-pink.disabled:active, 
+.btn-pink[disabled]:active, 
+fieldset[disabled] .btn-pink:active, 
+.btn-pink.disabled.active, 
+.btn-pink[disabled].active, 
+fieldset[disabled] .btn-pink.active { 
+  background-color: #BD318C; 
+  border-color: #731768; 
+} 
+ 
+.btn-pink .badge { 
+  color: #BD318C; 
+  background-color: #ffffff; 
+}
+
+.btn-sample { 
+  color: #ffffff; 
+  background-color: #611BBD; 
+  border-color: #130269; 
+} 
+ 
+.btn-sample:hover, 
+.btn-sample:focus, 
+.btn-sample:active, 
+.btn-sample.active, 
+.open .dropdown-toggle.btn-sample { 
+  color: #ffffff; 
+  background-color: #49247A; 
+  border-color: #130269; 
+} 
+ 
+.btn-sample:active, 
+.btn-sample.active, 
+.open .dropdown-toggle.btn-sample { 
+  background-image: none; 
+} 
+ 
+.btn-sample.disabled, 
+.btn-sample[disabled], 
+fieldset[disabled] .btn-sample, 
+.btn-sample.disabled:hover, 
+.btn-sample[disabled]:hover, 
+fieldset[disabled] .btn-sample:hover, 
+.btn-sample.disabled:focus, 
+.btn-sample[disabled]:focus, 
+fieldset[disabled] .btn-sample:focus, 
+.btn-sample.disabled:active, 
+.btn-sample[disabled]:active, 
+fieldset[disabled] .btn-sample:active, 
+.btn-sample.disabled.active, 
+.btn-sample[disabled].active, 
+fieldset[disabled] .btn-sample.active { 
+  background-color: #611BBD; 
+  border-color: #130269; 
+} 
+ 
+.btn-sample .badge { 
+  color: #611BBD; 
+  background-color: #ffffff; 
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
   <div class="container">
@@ -80,7 +177,7 @@
 	         <td><div style="word-wrap: break-word">
             {% if forloop.first %}
                 {% if entry.serial %}
-            <button style="width: 70px" type="button" class="btn btn-success" data-toggle="popover"
+            <button style="width: 70px" type="button" class="btn btn-pink" data-toggle="popover"
       data-content="{{entry.bit}}">{{entry.serial}}</button>
                 {% endif %}
             {% endif %}
@@ -102,10 +199,10 @@
                  data-content="{{entry.aux}}">Committed</button>
             {% endif %}
             {% if forloop.counter = 5 and entry.mark %}
-            <button style="width: 100px" type="button" class="btn btn-info">{% ifequal entry.mark "Voted" %}<span class="glyphicon glyphicon-ok"></span>    {% endifequal %} {{entry.mark}}</button>
+            <button style="width: 100px" type="button" class="btn btn-sample">{% ifequal entry.mark "Voted" %}<span class="glyphicon glyphicon-ok"></span>    {% endifequal %} {{entry.mark}}</button>
             {% endif %}
             {% if forloop.counter = 6 and entry.rand  %}
-            <button style="width: 70px" type="button" class="btn" data-toggle="popover"
+            <button style="width: 60px" type="button" class="btn" data-toggle="popover"
                  data-content="{{entry.rand}}">Coins</button>
             {% endif %}
 	    {% if forloop.counter = 7 and entry.post  %}

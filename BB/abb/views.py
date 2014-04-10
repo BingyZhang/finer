@@ -153,14 +153,14 @@ def index(request, eid = 0, tab = 1):
                     else:
                     	s = ''
                     temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])
-                    table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':code1[i]},{'cipher':temp},{'aux':aux1[i]},{'mark':mark1[i]},{'rand':rand1[i]},{'post':enc1[i]}])
+                    table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':code1[i]},{'cipher':temp},{'aux':aux1[i]},{'mark':mark1[i]},{'rand':rand1[i]},{'post':enc1[i][5:]}])
                 for i in range(elen):
                     if i ==0:
                         s = entry.serial+" B"
                     else:
                         s = ''
                     temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])
-                    table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':code2[i]},{'cipher':temp},{'aux':aux2[i]},{'mark':mark2[i]},{'rand':rand2[i]},{'post':enc1[i]}])
+                    table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':code2[i]},{'cipher':temp},{'aux':aux2[i]},{'mark':mark2[i]},{'rand':rand2[i]},{'post':enc1[i][5:]}])
             Vtable.append(table)
 	#end of verion 2
         BigData={'Data':Vtable,'Ver':version} 
@@ -248,14 +248,14 @@ def scroll(request, eid = 0, tab = 1, page = 1):
                 else:
                     s = ''
                 temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])
-                table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':code1[i]},{'cipher':temp},{'aux':aux1[i]},{'mark':mark1[i]},{'rand':rand1[i]},{}])
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':code1[i]},{'cipher':temp},{'aux':aux1[i]},{'mark':mark1[i]},{'rand':rand1[i]},{'post':enc1[i][5:]}])
             for i in range(elen):
                 if i ==0:
                     s = entry.serial+" B"
                 else:
                     s = ''
                 temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])
-                table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':code2[i]},{'cipher':temp},{'aux':aux2[i]},{'mark':mark2[i]},{'rand':rand2[i]},{}])
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':code2[i]},{'cipher':temp},{'aux':aux2[i]},{'mark':mark2[i]},{'rand':rand2[i]},{'post':enc1[i][5:]}])
         Vtable.append(table)
     #end of verion 2
     BigData={'Data':Vtable} 
