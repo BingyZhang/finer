@@ -102,4 +102,4 @@ STATICFILES_DIRS = (
 )
 
 
-MEDIA_ROOT = '/var/www/finer/EA'
+MEDIA_ROOT = '/var/www/finer/EA/'

@@ -165,7 +165,7 @@ def client(request, eid = 0,token = 0):
         record = e.tokens_set.get(token=token)
     except Tokens.DoesNotExist:
 	return HttpResponse('The token is invalid!')
-    name = "Email Voter"    
+    name = "Anonymous Voter"    
     options = e.choice_set.values('text')
     opts = [x['text'] for x in options]
     running = 0
@@ -191,7 +191,7 @@ def client(request, eid = 0,token = 0):
     ballot_code2 = [y for (x,y,z) in sorted2]
     ballot_rec1 = [z for (x,y,z) in sorted1]
     ballot_rec2 = [z for (x,y,z) in sorted2]
-    return render_to_response('vote.html',{'bb_url':ABB_URL, 'serial':b.serial , 'time':time, 'running':running, 'election':e, 'name':name, 'email':record.email,'c1':zip(ballot_code1,opts),'c2':zip(ballot_code2,opts)}, context_instance=RequestContext(request))
+    return render_to_response('vote.html',{'bb_url':ABB_URL, 'serial':b.serial , 'time':time, 'running':running, 'election':e, 'name':name,'c1':zip(ballot_code1,opts),'c2':zip(ballot_code2,opts)}, context_instance=RequestContext(request))
 
 
 def pdfballot(request, eid = 0,token = 0):
@@ -200,36 +200,12 @@ def pdfballot(request, eid = 0,token = 0):
     except Election.DoesNotExist:
         return HttpResponse('The election ID is invalid!')
     #fetch ballot
-    try:
-        record = e.pdfballot_set.get(token=token)
-    except Pdfballot.DoesNotExist:
-        return HttpResponse('The token is invalid!')
-    name = "Email Voter"
-    options = e.choice_set.values('text')
-    opts = [x['text'] for x in options]
-    running = 0
-    if e.was_started():
-        running = 1
-        time = int((e.end - timezone.now()).total_seconds())
-    if e.was_ended():
-        running = 2
-    #get ballot
-    assign = e.assignment_set.get(vID=record.token+record.email)
-    b = e.ballot_set.get(serial = assign.serial)
-    #get codes and options
-    codes1 = b.codes1.split(',')
-    codes2 = b.codes2.split(',')
-    rec1 = b.rec1.split(',')
-    rec2 = b.rec2.split(',')
-    perm1 = b.votes1.split(',')
-    perm2 = b.votes2.split(',')
-    #sort according to perm1
-    sorted1 = sorted(zip(perm1,codes1,rec1))
-    sorted2 = sorted(zip(perm2,codes2,rec2))
-    ballot_code1 = [y for (x,y,z) in sorted1]
-    ballot_code2 = [y for (x,y,z) in sorted2]
-    ballot_rec1 = [z for (x,y,z) in sorted1]
-    ballot_rec2 = [z for (x,y,z) in sorted2]
-    return render_to_response('vote.html',{'bb_url':ABB_URL, 'serial':b.serial , 'time':time, 'running':running})
+    record = e.pdfballot_set.filter(token=token)
+    if len(record) == 0:
+        return HttpResponse('Gremlins ate your ballots!')
+    response = HttpResponse(content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename="Ballots.zip"'
+    response.write(record[0].pdf.read())
+    return response
 
 

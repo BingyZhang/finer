@@ -3,7 +3,7 @@ from io import BytesIO
 from celery import shared_task
 from django.utils import timezone
 from django.core.files.base import ContentFile
-from elect_def.models import Election, Ballot,Randomstate,Assignment, Tokens
+from elect_def.models import Election, Ballot,Randomstate,Assignment, Tokens, Pdfballot
 import hashlib,hmac,base64,os,binascii,subprocess, cStringIO, csv, zipfile, requests, qrcode
 from Crypto.Cipher import AES
 from Crypto import Random
@@ -13,6 +13,7 @@ from reportlab.pdfgen import canvas
 
 BB_URL = "http://tal.di.uoa.gr/finer/"
 CLIENT_URL = "http://tal.di.uoa.gr/ea/client/"
+Ballot_URL = "http://tal.di.uoa.gr/ea/pdf/"
 
 #the size of hamc and AES
 RSIZE = 32
@@ -172,6 +173,8 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     	output,err = p.communicate()
 ###################
 #pdf ballots
+    zip_buffer = cStringIO.StringIO()
+    zfile = zipfile.ZipFile(zip_buffer,'w')
     for i in range(intpdf):
 	#generate random token
 	token = long(binascii.hexlify(os.urandom(16)), 16)
@@ -194,6 +197,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     	rec2 = b.rec2.split(',')
     	perm1 = b.votes1.split(',')
     	perm2 = b.votes2.split(',')
+
     	#sort according to perm1
     	sorted1 = sorted(zip(perm1,codes1,rec1))
     	sorted2 = sorted(zip(perm2,codes2,rec2))
@@ -207,39 +211,62 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     	p = canvas.Canvas(buffer)
 	# Draw things on the PDF. Here's where the PDF generation happens.
 	p.setFont("Helvetica", 10)
-    	p.drawString(60, 800, "Hello,")
-    	p.drawString(60, 780, "Here is your ballot.")
-    	p.drawString(60, 760, "================================================")
-    	p.drawString(60, 740, "Serial Number: 103")
-    	p.drawString(60, 720, "================================================")
-    	p.drawString(60, 700, "Ballot A:")
-    	p.drawString(60, 680, "Votecode: FTRY-B5US-TZVK  Receipt: 15EPRV  Option: Yes")
-    	p.drawString(60, 660, "Votecode: WUU3-90FC-C7M7  Receipt: 5IB8A8  Option: No")
-    	p.drawString(60, 640, "================================================")
-    	p.drawString(60, 620, "Ballot B:")
-    	p.drawString(60, 600, "Votecode: PUS8-ASPZ-RGQI  Receipt: OY2OR6  Option: Yes")
-    	p.drawString(60, 580, "Votecode: UQ02-IXTZ-DLDL  Receipt: YH84O7  Option: No")
-    	p.drawString(60, 560, "================================================")
-    	p.drawString(60, 540, "VBB url: http://tal.di.uoa.gr/finer/vbb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
-    	p.drawString(60, 520, "ABB url: http://tal.di.uoa.gr/finer/abb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
-    	p.drawString(60, 500, "Client url:")
-    	p.drawString(60, 480,"http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/2TN7LYA4ERH8GP1V693647YZI/")
-
-    	p.drawString(60, 60, "FINER Ballot Distribution Server")
+	height = 800
+    	p.drawString(60, height, "================================================")
+	height -=20
+    	p.drawString(60, height, "Serial Number: "+b.serial)
+	height -=20
+    	p.drawString(60, height, "================================================")
+        height -=20
+    	p.drawString(60, height, "Ballot A:")
+        height -=20
+	for j in range(len(opts)):
+	    p.drawString(60, height, "Votecode: "+ballot_code1[j]+"  Receipt: "+ballot_rec1[j]+ "  Option: "+opts[j])
+	    height -=20
+        p.drawString(60, height, "================================================")
+        height -=20
+        p.drawString(60, height, "Ballot B:")
+	height -=20
+        for j in range(len(opts)):
+            p.drawString(60, height, "Votecode: "+ballot_code2[j]+"  Receipt: "+ballot_rec2[j]+ "  Option: "+opts[j])
+            height -=20
+        p.drawString(60, height, "================================================")
+        height -=20
+    	p.drawString(60, height, "VBB url: "+BB_URL+"vbb/"+e.EID+"/")
+	height -=20
+    	p.drawString(60, height, "ABB url: "+BB_URL+"abb/"+e.EID+"/")
+	height -=20
+    	p.drawString(60, height, "Client url:")
+	height -=20
+    	p.drawString(60, height,CLIENT_URL+e.EID+"/"+stoken+"/")
+	height -=20  
+    	p.drawString(60, 100, "FINER Ballot Distribution Server")
     	img = qrcode.make("http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/6SN8CGAT9GAQWTC749Z1QUXGR/")
     	output = cStringIO.StringIO() ## temp QR file
     	img.save(output,'PNG')
     	output.seek(0) #rewind the data
     	image = ImageReader(output)
-    	p.drawImage(image,100,80,width=180, height=180)
+    	p.drawImage(image,200,120,width=180, height=180)
     	# Close the PDF object cleanly, and we're done.
     	p.showPage()
     	p.save()
+	output.close()
 	#save pdf
-	new_pdf = Pdfballot(election = e, token = stoken)
-	new_pdf.save()
-	new_pdf.pdf.save("Ballot"+str(i),ContentFile(buffer.getvaule()))
-	buffer.close()
+        zfile.writestr("Ballots/"+str(i)+".pdf", buffer.getvalue())
+        buffer.close()
+    new_pdf = Pdfballot(election = e, token = stoken)
+    new_pdf.save()
+    zfile.close()
+    new_pdf.pdf.save("Ballots"+e.EID+".zip",ContentFile(zip_buffer.getvalue()))
+    zip_buffer.close()
+#send the PDF ballot link
+    emailbody = "Hello,\n\nYour ballots are generated. You can download them now.\n"
+    emailbody+= "URL: "+Ballot_URL+e.EID+"/"+stoken+"/\n"
+    emailbody+= "\nFINER Ballot Distribution Server\n"
+    #send email             
+    p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","PDF Ballots for Election: "+e.question, emailbody,e.c_email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    output,err = p.communicate()	
+
 ########################################
 	
     #send ABB CSV data
