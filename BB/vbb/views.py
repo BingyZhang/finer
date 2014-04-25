@@ -6,9 +6,10 @@ from vbb.forms import VoteForm, FeedbackForm
 from vbb.models import Vbb, Dballot, Election, Choice, Bba
 from abb.models import UpdateInfo,Abbinit
 from django.utils import timezone
-import datetime, cStringIO, zipfile, csv, copy,os, base64, random,hmac,hashlib,binascii,subprocess
+import datetime, cStringIO, zipfile, csv, copy,os, base64, random,hmac,hashlib,binascii,subprocess, qrcode
 from django.core.files import File
-from tasks import add
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 # Create your views here.
 
 def addbars(code):
@@ -427,10 +428,6 @@ def upload(request, eid = 0):
 
 
 
-def test(request, tab = 0):
-	return render_to_response('test.html',{'tab':tab})
-
-
 
 def keyholder(request, eid = 0):
 	try:
@@ -454,3 +451,45 @@ def keyholder(request, eid = 0):
 			return HttpResponse('The election is not ended yet! Please come back later')
 	else:
 		return render_to_response('keyholder.html', context_instance=RequestContext(request))
+
+
+
+def test(request, tab = 0):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="Ballot.pdf"'
+    # Create the PDF object, using the response object as its "file."
+    p = canvas.Canvas(response)
+
+    # Draw things on the PDF. Here's where the PDF generation happens.
+    # See the ReportLab documentation for the full list of functionality.
+    p.setFont("Helvetica", 10)
+    p.drawString(60, 800, "Hello,")
+    p.drawString(60, 780, "Here is your ballot.")
+    p.drawString(60, 760, "================================================")
+    p.drawString(60, 740, "Serial Number: 103")
+    p.drawString(60, 720, "================================================")
+    p.drawString(60, 700, "Ballot A:")
+    p.drawString(60, 680, "Votecode: FTRY-B5US-TZVK  Receipt: 15EPRV  Option: Yes")
+    p.drawString(60, 660, "Votecode: WUU3-90FC-C7M7  Receipt: 5IB8A8  Option: No")
+    p.drawString(60, 640, "================================================")
+    p.drawString(60, 620, "Ballot B:")
+    p.drawString(60, 600, "Votecode: PUS8-ASPZ-RGQI  Receipt: OY2OR6  Option: Yes")
+    p.drawString(60, 580, "Votecode: UQ02-IXTZ-DLDL  Receipt: YH84O7  Option: No")
+    p.drawString(60, 560, "================================================")
+    p.drawString(60, 540, "VBB url: http://tal.di.uoa.gr/finer/vbb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
+    p.drawString(60, 520, "ABB url: http://tal.di.uoa.gr/finer/abb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
+    p.drawString(60, 500, "Client url:")
+    p.drawString(60, 480,"http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/2TN7LYA4ERH8GP1V693647YZI/")
+
+    p.drawString(60, 60, "FINER Ballot Distribution Server")
+    img = qrcode.make("http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/6SN8CGAT9GAQWTC749Z1QUXGR/")
+    output = cStringIO.StringIO() ## temp QR file
+    img.save(output,'PNG')
+    output.seek(0) #rewind the data
+    image = ImageReader(output)
+    p.drawImage(image,100,80,width=180, height=180)
+    # Close the PDF object cleanly, and we're done.
+    p.showPage()
+    p.save()
+    
+    return response

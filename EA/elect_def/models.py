@@ -51,6 +51,8 @@ class Assignment(models.Model):
         election = models.ForeignKey(Election)
         vID = models.CharField(max_length=1024)
         serial = models.CharField(max_length=1024)
+	#ballot = models.FileField(upload_to='Archives/Ballots',null=True, blank=True)
+	#qr = models.FileField(upload_to='Archives/QRs',null=True, blank=True)
         def __str__(self):
                 return str(self.vID)
 

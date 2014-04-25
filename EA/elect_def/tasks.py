@@ -4,7 +4,7 @@ from celery import shared_task
 from django.utils import timezone
 from django.core.files.base import ContentFile
 from elect_def.models import Election, Ballot,Randomstate,Assignment, Tokens
-import hashlib,hmac,base64,os,binascii,subprocess, cStringIO, csv, zipfile, requests
+import hashlib,hmac,base64,os,binascii,subprocess, cStringIO, csv, zipfile, requests, qrcode
 from Crypto.Cipher import AES
 from Crypto import Random
 
@@ -167,6 +167,7 @@ def prepare_ballot(e, total, n, emails, keyemails):
     	#send email		
     	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Ballot for Election: "+e.question, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     	output,err = p.communicate()
+	
     #send ABB CSV data
     #random key for column 1
     k1 = os.urandom(KSIZE)
