@@ -111,7 +111,10 @@ def vote(request, eid = 0):
     except Assignment.DoesNotExist:
         #assign one
 	first_time = True
-	b = e.ballot_set.filter(used = False)[0]
+	unusedb = e.ballot_set.filter(used = False)
+	if len(unusedb) == 0:
+	    return HttpResponse("Sorry, all ballots are assigned.")
+	b = unusedb[0]
 	assign = Assignment(election = e, vID = ID, serial = b.serial)
 	assign.save()
 	#mark as used
