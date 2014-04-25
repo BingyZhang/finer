@@ -10,5 +10,6 @@ urlpatterns = patterns('',
     url(r'^client/(?P<eid>\w+)/(?P<token>\w+)/$', 'auth.views.client'),
     url(r'^def/', include('elect_def.urls')),
     url(r'^publicdef/', 'elect_def.views.pubdef'),
-    url(r'^admin/', include(admin.site.urls)),                   
+    url(r'^admin/', include(admin.site.urls)),
+    url(r'^pdf/(?P<eid>\w+)/(?P<token>\w+)/$', 'auth.views.pdfballot'),
 )

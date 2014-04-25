@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-
+from io import BytesIO
 from celery import shared_task
 from django.utils import timezone
 from django.core.files.base import ContentFile
@@ -7,6 +7,9 @@ from elect_def.models import Election, Ballot,Randomstate,Assignment, Tokens
 import hashlib,hmac,base64,os,binascii,subprocess, cStringIO, csv, zipfile, requests, qrcode
 from Crypto.Cipher import AES
 from Crypto import Random
+from django.core.files import File
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 
 BB_URL = "http://tal.di.uoa.gr/finer/"
 CLIENT_URL = "http://tal.di.uoa.gr/ea/client/"
@@ -62,7 +65,7 @@ def decrypt(ciphertext, key):
 
 
 @shared_task
-def prepare_ballot(e, total, n, emails, keyemails):
+def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     #print "test...creating ballot.."
     #create ballots
     for v in range(100,total+100):
@@ -167,6 +170,77 @@ def prepare_ballot(e, total, n, emails, keyemails):
     	#send email		
     	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Ballot for Election: "+e.question, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     	output,err = p.communicate()
+###################
+#pdf ballots
+    for i in range(intpdf):
+	#generate random token
+	token = long(binascii.hexlify(os.urandom(16)), 16)
+        stoken = base36encode(token)#no padding 128 bit
+	b = unused[counter]
+	counter += 1
+	email = "pdf"+str(i)
+	assign = Assignment(election = e, vID = stoken+email, serial = b.serial)
+	assign.save()
+	#mark as used
+	b.used = True
+	b.save()
+	#store token
+	new_t = Tokens(election = e, token = stoken, email = email)
+	new_t.save()
+	#get codes and options
+    	codes1 = b.codes1.split(',')
+    	codes2 = b.codes2.split(',')
+    	rec1 = b.rec1.split(',')
+    	rec2 = b.rec2.split(',')
+    	perm1 = b.votes1.split(',')
+    	perm2 = b.votes2.split(',')
+    	#sort according to perm1
+    	sorted1 = sorted(zip(perm1,codes1,rec1))
+    	sorted2 = sorted(zip(perm2,codes2,rec2))
+    	ballot_code1 = [y for (x,y,z) in sorted1]
+    	ballot_code2 = [y for (x,y,z) in sorted2]
+    	ballot_rec1 = [z for (x,y,z) in sorted1]
+    	ballot_rec2 = [z for (x,y,z) in sorted2]
+	#generate the pdf
+	buffer = cStringIO.StringIO()
+    	# Create the PDF object, using the IO object as its "file."
+    	p = canvas.Canvas(buffer)
+	# Draw things on the PDF. Here's where the PDF generation happens.
+	p.setFont("Helvetica", 10)
+    	p.drawString(60, 800, "Hello,")
+    	p.drawString(60, 780, "Here is your ballot.")
+    	p.drawString(60, 760, "================================================")
+    	p.drawString(60, 740, "Serial Number: 103")
+    	p.drawString(60, 720, "================================================")
+    	p.drawString(60, 700, "Ballot A:")
+    	p.drawString(60, 680, "Votecode: FTRY-B5US-TZVK  Receipt: 15EPRV  Option: Yes")
+    	p.drawString(60, 660, "Votecode: WUU3-90FC-C7M7  Receipt: 5IB8A8  Option: No")
+    	p.drawString(60, 640, "================================================")
+    	p.drawString(60, 620, "Ballot B:")
+    	p.drawString(60, 600, "Votecode: PUS8-ASPZ-RGQI  Receipt: OY2OR6  Option: Yes")
+    	p.drawString(60, 580, "Votecode: UQ02-IXTZ-DLDL  Receipt: YH84O7  Option: No")
+    	p.drawString(60, 560, "================================================")
+    	p.drawString(60, 540, "VBB url: http://tal.di.uoa.gr/finer/vbb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
+    	p.drawString(60, 520, "ABB url: http://tal.di.uoa.gr/finer/abb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
+    	p.drawString(60, 500, "Client url:")
+    	p.drawString(60, 480,"http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/2TN7LYA4ERH8GP1V693647YZI/")
+
+    	p.drawString(60, 60, "FINER Ballot Distribution Server")
+    	img = qrcode.make("http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/6SN8CGAT9GAQWTC749Z1QUXGR/")
+    	output = cStringIO.StringIO() ## temp QR file
+    	img.save(output,'PNG')
+    	output.seek(0) #rewind the data
+    	image = ImageReader(output)
+    	p.drawImage(image,100,80,width=180, height=180)
+    	# Close the PDF object cleanly, and we're done.
+    	p.showPage()
+    	p.save()
+	#save pdf
+	new_pdf = Pdfballot(election = e, token = stoken)
+	new_pdf.save()
+	new_pdf.pdf.save("Ballot"+str(i),ContentFile(buffer.getvaule()))
+	buffer.close()
+########################################
 	
     #send ABB CSV data
     #random key for column 1

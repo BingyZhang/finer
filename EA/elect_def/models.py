@@ -24,6 +24,13 @@ class Election(models.Model):
 	def __str__(self):
 		return str(self.question)
 
+class Pdfballot(models.Model):
+	election = models.ForeignKey(Election)
+	token = models.CharField(max_length=1024)
+	pdf = models.FileField(upload_to='Archives',null=True, blank=True)
+	def __str__(self):
+                return str(self.token)
+
 class Choice(models.Model):    
 	election = models.ForeignKey(Election)
 	text = models.CharField(max_length=1024)
