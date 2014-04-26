@@ -241,7 +241,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     	p.drawString(60, height,CLIENT_URL+e.EID+"/"+stoken+"/")
 	height -=20  
     	p.drawString(60, 100, "FINER Ballot Distribution Server")
-    	img = qrcode.make("http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/6SN8CGAT9GAQWTC749Z1QUXGR/")
+    	img = qrcode.make(CLIENT_URL+e.EID+"/"+stoken+"/")
     	output = cStringIO.StringIO() ## temp QR file
     	img.save(output,'PNG')
     	output.seek(0) #rewind the data
