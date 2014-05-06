@@ -168,7 +168,7 @@ def client(request, eid = 0,token = 0):
         record = e.tokens_set.get(token=token)
     except Tokens.DoesNotExist:
 	return HttpResponse('The token is invalid!')
-    name = "Anonymous Voter"    
+    #name = "Voter"    
     options = e.choice_set.values('text')
     opts = [x['text'] for x in options]
     running = 0
@@ -194,7 +194,61 @@ def client(request, eid = 0,token = 0):
     ballot_code2 = [y for (x,y,z) in sorted2]
     ballot_rec1 = [z for (x,y,z) in sorted1]
     ballot_rec2 = [z for (x,y,z) in sorted2]
-    return render_to_response('vote.html',{'bb_url':ABB_URL, 'serial':b.serial , 'time':time, 'running':running, 'election':e, 'name':name,'c1':zip(ballot_code1,opts),'c2':zip(ballot_code2,opts)}, context_instance=RequestContext(request))
+    return render_to_response('voteGR.html',{'bb_url':ABB_URL, 'serial':b.serial , 'time':time, 'running':running, 'election':e,'c1':zip(ballot_code1,opts),'c2':zip(ballot_code2,opts)}, context_instance=RequestContext(request))
+
+
+def sample(request, eid = 0,token = 0):
+    try:
+        e = Election.objects.get(EID=eid)
+    except Election.DoesNotExist:
+        return HttpResponse('The election ID is invalid!')
+    #fetch ballot
+    try:
+        record = e.tokens_set.get(token=token)
+    except Tokens.DoesNotExist:
+        return HttpResponse('The token is invalid!')
+    #name = "Voter"    
+    options = e.choice_set.values('text')
+    opts = [x['text'].split(';') for x in options]
+    running = 0
+    if e.was_started():
+        running = 1
+        time = int((e.end - timezone.now()).total_seconds())
+    if e.was_ended():
+        running = 2
+    #get ballot
+    assign = e.assignment_set.get(vID=record.token+record.email)
+    b = e.ballot_set.get(serial = assign.serial)
+    #get codes and options
+    codes1 = b.codes1.split(',')
+    codes2 = b.codes2.split(',')
+    rec1 = b.rec1.split(',')
+    rec2 = b.rec2.split(',')
+    perm1 = b.votes1.split(',')
+    perm2 = b.votes2.split(',')
+    #sort according to perm1
+    sorted1 = sorted(zip(perm1,codes1,rec1))
+    sorted2 = sorted(zip(perm2,codes2,rec2))
+    ballot_code1 = [y for (x,y,z) in sorted1]
+    ballot_code2 = [y for (x,y,z) in sorted2]
+    ballot_rec1 = [z for (x,y,z) in sorted1]
+    ballot_rec2 = [z for (x,y,z) in sorted2]
+
+    #prepare 6*8 table
+    option_table = []
+    counter = 0
+    for i in range(8):
+	temprow = []
+	for j in range(6):
+	    if 6*i+j < len(opts):
+		temp = {"id":6*i+j+1 ,"name":opts[6*i+j]}
+	    	temprow.append(temp)
+	    else:
+		break
+	option_table.append(temprow)
+
+    return render_to_response('sampleGR.html',{'bb_url':ABB_URL, 'serial':b.serial , 'time':time,'options':option_table, 'running':running, 'election':e,'c1':zip(ballot_code1,opts),'c2':zip(ballot_code2,opts)})
+
 
 
 def pdfballot(request, eid = 0,token = 0):

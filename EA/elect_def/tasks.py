@@ -1,19 +1,33 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from io import BytesIO
 from celery import shared_task
 from django.utils import timezone
 from django.core.files.base import ContentFile
 from elect_def.models import Election, Ballot,Randomstate,Assignment, Tokens, Pdfballot
-import hashlib,hmac,base64,os,binascii,subprocess, cStringIO, csv, zipfile, requests, qrcode
+import hashlib,hmac,base64,os,binascii,subprocess, cStringIO, csv, zipfile, requests, qrcode,codecs
 from Crypto.Cipher import AES
 from Crypto import Random
 from django.core.files import File
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.pagesizes import letter,A4
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle,Image, Paragraph
+
 
 BB_URL = "http://tal.di.uoa.gr/finer/"
+SAMPLE_URL = "http://tal.di.uoa.gr/ea/sample/"
 CLIENT_URL = "http://tal.di.uoa.gr/ea/client/"
 Ballot_URL = "http://tal.di.uoa.gr/ea/pdf/"
+
+ #support UTF-8
+env = os.environ
+env['PYTHONIOENCODING'] = 'utf-8'
 
 #the size of hamc and AES
 RSIZE = 32
@@ -78,7 +92,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
 	votes = ["",""]
 	ciphers = ["",""]
         for ab in range(2):
-	    p = subprocess.Popen(["sh","/var/www/finer/EC-ElGamal/GenPerm.sh", str(n)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	    p = subprocess.Popen(["sh","/var/www/finer/EC-ElGamal/GenPerm.sh", str(n)],stdout=subprocess.PIPE,stderr=subprocess.PIPE, env=env)
 	    output,err = p.communicate()
 	    votes[ab] = output
 	    #read from the disk file for ciphers
@@ -169,7 +183,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
 	emailbody+= "Client url: "+CLIENT_URL+e.EID+"/"+stoken+"/\n"
     	emailbody+= "\nFINER Ballot Distribution Server\n"
     	#send email		
-    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Ballot for Election: "+e.question, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Ballot for Election: "+e.question, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE, env=env)
     	output,err = p.communicate()
 ###################
 #pdf ballots
@@ -208,48 +222,112 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
 	#generate the pdf
 	buffer = cStringIO.StringIO()
     	# Create the PDF object, using the IO object as its "file."
-    	p = canvas.Canvas(buffer)
-	# Draw things on the PDF. Here's where the PDF generation happens.
-	p.setFont("Helvetica", 10)
-	height = 800
-    	p.drawString(60, height, "================================================")
-	height -=20
-    	p.drawString(60, height, "Serial Number: "+b.serial)
-	height -=20
-    	p.drawString(60, height, "================================================")
-        height -=20
-    	p.drawString(60, height, "Ballot A:")
-        height -=20
-	for j in range(len(opts)):
-	    p.drawString(60, height, "Votecode: "+ballot_code1[j]+"  Receipt: "+ballot_rec1[j]+ "  Option: "+opts[j])
-	    height -=20
-        p.drawString(60, height, "================================================")
-        height -=20
-        p.drawString(60, height, "Ballot B:")
-	height -=20
-        for j in range(len(opts)):
-            p.drawString(60, height, "Votecode: "+ballot_code2[j]+"  Receipt: "+ballot_rec2[j]+ "  Option: "+opts[j])
-            height -=20
-        p.drawString(60, height, "================================================")
-        height -=20
-    	p.drawString(60, height, "VBB url: "+BB_URL+"vbb/"+e.EID+"/")
-	height -=20
-    	p.drawString(60, height, "ABB url: "+BB_URL+"abb/"+e.EID+"/")
-	height -=20
-    	p.drawString(60, height, "Client url:")
-	height -=20
-    	p.drawString(60, height,CLIENT_URL+e.EID+"/"+stoken+"/")
-	height -=20  
-    	p.drawString(60, 100, "FINER Ballot Distribution Server")
-    	img = qrcode.make(CLIENT_URL+e.EID+"/"+stoken+"/")
-    	output = cStringIO.StringIO() ## temp QR file
-    	img.save(output,'PNG')
-    	output.seek(0) #rewind the data
-    	image = ImageReader(output)
-    	p.drawImage(image,200,120,width=180, height=180)
-    	# Close the PDF object cleanly, and we're done.
-    	p.showPage()
-    	p.save()
+	  #register ttf fonts
+ 	ttffont='/usr/share/fonts/truetype/ttf-liberation/'
+    	pdfmetrics.registerFont(TTFont('LiberationSans', ttffont+'LiberationSans-Regular.ttf'))
+    	pdfmetrics.registerFont(TTFont('LiberationSansBd', ttffont+'LiberationSans-Bold.ttf'))
+    	pdfmetrics.registerFont(TTFont('LiberationSansIt', ttffont+'LiberationSans-Italic.ttf'))
+    	pdfmetrics.registerFont(TTFont('LiberationSansBI', ttffont+'LiberationSans-BoldItalic.ttf'))
+	#create pdf doc
+	doc = SimpleDocTemplate(buffer, pagesize=A4)
+	style = ParagraphStyle(
+        	name='Normal',
+        	fontName='LiberationSansBd',
+        	fontSize=14,
+    	)
+    
+    	style_warning = ParagraphStyle(
+        	name='Normal',
+        	fontName='LiberationSans',
+        	fontSize=12,
+        	firstLineIndent = 0,
+    	)
+	#prepare table data
+	data = [['Πολιτικό κόμμα', 'Κωδικός A', 'Απόδειξη A','','Πολιτικό κόμμα', 'Κωδικός B', 'Απόδειξη B']]
+	data2 = [['Πολιτικό κόμμα', 'Κωδικός B', 'Απόδειξη B','','Πολιτικό κόμμα', 'Κωδικός A', 'Απόδειξη A']]
+	for ii in range(len(opts)):
+		tempname = opts[ii].split(';')
+		if ii <23:
+			temprow = [tempname[0],ballot_code1[ii], ballot_rec1[ii],'',tempname[0],ballot_code2[ii],ballot_rec2[ii]]
+			data.append(temprow)
+		else:
+			temprow = [tempname[0],ballot_code2[ii], ballot_rec2[ii],'',tempname[0],ballot_code1[ii],ballot_rec1[ii]]
+                        data2.append(temprow)
+
+
+	serial = [['Σειριακός αριθμός:',b.serial,'Σειριακός αριθμός:',b.serial]]
+
+	#pdf part
+	parts = []
+
+	table_serial = Table(serial, [2*inch,1.65 * inch, 2*inch,1.65* inch])
+        table_serial.setStyle(TableStyle([
+    	('FONT', (0, 0), (-1, 0), 'LiberationSansBd'),
+    	('FONTSIZE', (0, 0), (-1, -1), 14),
+    	('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+    	]))
+
+    	parts.append(table_serial)
+    	parts.append(Spacer(1, 0.2 * inch))
+    	table_with_style = Table(data, [1.5 * inch, 1.3 * inch, 0.8*inch,0.1*inch, 1.5*inch,1.3 * inch, 0.8*inch])
+
+   	table_with_style.setStyle(TableStyle([
+    	('FONT', (0, 0), (-1, -1), 'LiberationSans'),
+    	('FONT', (0, 0), (-1, 0), 'LiberationSansBd'),
+    	('FONTSIZE', (0, 0), (-1, -1), 9),
+    	('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
+    	('BOX', (0, 0), (-1, 0), 0.25, colors.green),
+    	('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+    	('BOX',(0,0),(-1,-1),2,colors.black),
+    	('BOX', (1, 0), (2, -1),2, colors.black),
+    	('BOX', (4, 0), (-1, -1),2, colors.black),
+    	]))
+
+    
+    	parts.append(table_with_style)
+
+    	parts.append(Spacer(1, 0.2 * inch))
+    	#drawimage
+	img = qrcode.make(SAMPLE_URL+e.EID+"/"+stoken+"/")
+        output = cStringIO.StringIO() ## temp QR file
+        img.save(output,'PNG')
+        output.seek(0) #rewind the data
+        I = Image(output, width = 150, height = 150)
+	parts.append(I)
+    	parts.append(Spacer(1, 0.2 * inch))
+    	parts.append(Paragraph("Εξυπηρετητής Διανομής Ψηφοδελτίων FINER", style))
+    	parts.append(Spacer(1, 0.25 * inch))
+    	parts.append( Paragraph("Παρακαλούμε δείτε στην πίσω πλευρά του φύλλου για περισσότερες επιλογές.",style_warning))
+    
+
+    	parts.append(table_serial)
+    	parts.append(Spacer(1, 0.2 * inch))
+    	table_with_style = Table(data2, [1.5 * inch, 1.3 * inch, 0.8*inch,0.1*inch, 1.5*inch,1.3 * inch, 0.8*inch])
+
+    	table_with_style.setStyle(TableStyle([
+    	('FONT', (0, 0), (-1, -1), 'LiberationSans'),
+    	('FONT', (0, 0), (-1, 0), 'LiberationSansBd'),
+    	('FONTSIZE', (0, 0), (-1, -1), 9),
+    	('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
+    	('BOX', (0, 0), (-1, 0), 0.25, colors.green),
+    	('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+    	('BOX',(0,0),(-1,-1),2,colors.black),
+    	('BOX', (1, 0), (2, -1),2, colors.black),
+    	('BOX', (4, 0), (-1, -1),2, colors.black),
+    	]))
+    
+    	parts.append(table_with_style)
+
+    	parts.append(Spacer(1, 0.2 * inch))
+    	#drawimage
+    	parts.append(I)
+    	parts.append(Spacer(1, 0.2 * inch))
+    	parts.append(Paragraph("Εξυπηρετητής Διανομής Ψηφοδελτίων FINER", style))
+    	parts.append(Spacer(1, 0.25 * inch))
+    	parts.append( Paragraph("Παρακαλούμε δείτε στην πίσω πλευρά του φύλλου για περισσότερες επιλογές.",style_warning))
+
+    	doc.build(parts)
+
 	output.close()
 	#save pdf
         zfile.writestr("Ballots/"+str(i)+".pdf", buffer.getvalue())
@@ -264,7 +342,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     emailbody+= "URL: "+Ballot_URL+e.EID+"/"+stoken+"/\n"
     emailbody+= "\nFINER Ballot Distribution Server\n"
     #send email             
-    p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","PDF Ballots for Election: "+e.question, emailbody,e.c_email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","PDF Ballots for Election: "+e.question, emailbody,e.c_email],stdout=subprocess.PIPE,stderr=subprocess.PIPE, env=env)
     output,err = p.communicate()	
 
 ########################################
@@ -285,7 +363,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     emailbody+= "\nFINER  Election Authority\n"
     email = keyemails
     #send email         
-    p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Private Key for Election Definition "+e.EID, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Private Key for Election Definition "+e.EID, emailbody,email],stdout=subprocess.PIPE,stderr=subprocess.PIPE, env=env)
     output,err = p.communicate()
 ##########################
 

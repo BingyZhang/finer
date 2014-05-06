@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, render
 from django.http import HttpResponse, HttpResponseRedirect
@@ -6,10 +7,12 @@ from vbb.forms import VoteForm, FeedbackForm
 from vbb.models import Vbb, Dballot, Election, Choice, Bba
 from abb.models import UpdateInfo,Abbinit
 from django.utils import timezone
-import datetime, cStringIO, zipfile, csv, copy,os, base64, random,hmac,hashlib,binascii,subprocess, qrcode
+import datetime, cStringIO, zipfile, csv, copy,os, base64, random,hmac,hashlib,binascii,subprocess, qrcode,codecs
 from django.core.files import File
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics 
+from reportlab.pdfbase.ttfonts import TTFont
 # Create your views here.
 
 def addbars(code):
@@ -458,15 +461,22 @@ def test(request, tab = 0):
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="Ballot.pdf"'
     # Create the PDF object, using the response object as its "file."
+	#register ttf fonts
+    ttffont='/usr/share/fonts/truetype/ttf-liberation/'
+    pdfmetrics.registerFont(TTFont('LiberationSans', ttffont+'LiberationSans-Regular.ttf'))
+    pdfmetrics.registerFont(TTFont('LiberationSansBd', ttffont+'LiberationSans-Bold.ttf'))
+    pdfmetrics.registerFont(TTFont('LiberationSansIt', ttffont+'LiberationSans-Italic.ttf'))
+    pdfmetrics.registerFont(TTFont('LiberationSansBI', ttffont+'LiberationSans-BoldItalic.ttf'))
     p = canvas.Canvas(response)
 
     # Draw things on the PDF. Here's where the PDF generation happens.
     # See the ReportLab documentation for the full list of functionality.
-    p.setFont("Helvetica", 10)
+    p.setFont("LiberationSans", 10)
     p.drawString(60, 800, "Hello,")
     p.drawString(60, 780, "Here is your ballot.")
     p.drawString(60, 760, "================================================")
-    p.drawString(60, 740, "Serial Number: 103")
+    tempstr = "Σειριακός αριθμός: "+str(tab)
+    p.drawString(60, 740, tempstr.decode('utf-8'))
     p.drawString(60, 720, "================================================")
     p.drawString(60, 700, "Ballot A:")
     p.drawString(60, 680, "Votecode: FTRY-B5US-TZVK  Receipt: 15EPRV  Option: Yes")
@@ -481,7 +491,7 @@ def test(request, tab = 0):
     p.drawString(60, 500, "Client url:")
     p.drawString(60, 480,"http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/2TN7LYA4ERH8GP1V693647YZI/")
 
-    p.drawString(60, 60, "FINER Ballot Distribution Server")
+    p.drawString(60, 60, "FINER Ballot Distribution Server  κατεβάσετε".decode('utf-8'))
     img = qrcode.make("http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/6SN8CGAT9GAQWTC749Z1QUXGR/")
     output = cStringIO.StringIO() ## temp QR file
     img.save(output,'PNG')
