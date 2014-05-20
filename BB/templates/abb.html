@@ -161,6 +161,13 @@ fieldset[disabled] .btn-sample.active {
    </ul>
       
       <div class="manypopovers">
+	{% if resultshow %} 
+	<div align="center" style="word-wrap: break-word">
+	<button type="button" class="btn {% if final.verify %}btn-success{% else %}btn-danger{% endif %}" data-toggle="popover"
+      data-content="{{final.tallycipher}}">{{final.tallyplain}}</button>
+	</div>
+	{% endif%}
+
       {% for itemset in BigData.Data %}
 	      <table class="table table-hover">
               <thead>

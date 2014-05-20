@@ -46,6 +46,8 @@ class Ballot(models.Model):
 	codes1 = models.TextField(null=True, blank=True)
 	votes1 = models.TextField(null=True, blank=True)
 	rec1 = models.TextField(null=True, blank=True)
+	plain1 = models.TextField(null=True, blank=True)
+	plain2 = models.TextField(null=True, blank=True)
 	cipher1 = models.TextField(null=True, blank=True)
 	codes2 = models.TextField(null=True, blank=True)
 	votes2 = models.TextField(null=True, blank=True)

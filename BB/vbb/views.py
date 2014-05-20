@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
 from vbb.forms import VoteForm, FeedbackForm
 from vbb.models import Vbb, Dballot, Election, Choice, Bba
-from abb.models import UpdateInfo,Abbinit
+from abb.models import UpdateInfo,Abbinit, Auxiliary
 from django.utils import timezone
 import datetime, cStringIO, zipfile, csv, copy,os, base64, random,hmac,hashlib,binascii,subprocess, qrcode,codecs
 from django.core.files import File
@@ -61,7 +61,8 @@ def send_request(e):
 	n = len(opts)
 	#get all for fast disk IO
 	abbs = e.abbinit_set.all()
-	opt_ciphers = [[] for x in range(n)]#ElGamal
+	opt_ciphers = []#ElGamal
+	opt_plains = []#decommit
         #prepare the table_data
         for each in votes:
 		feedback = each.dballot_set.filter(checked = True)
@@ -70,32 +71,40 @@ def send_request(e):
 		codes2 = record.codes2.split(',')
 		cipher1 =record.cipher1.split(',')
 		cipher2 = record.cipher2.split(',')
+		plain1 = record.plain1.split(',')
+		plain2 = record.plain2.split(',')
 		mark1 = []
 		mark2 = []
 		for i in range(n):
 			if each.votecode == codes1[i]:
 				mark1.append("Voted")
-				#2n*i to 2n*(i+1)-1 put ciphers
-				for j in range(n):
-					temp = cipher1[2*n*i+2*j].split(' ')
-					for t in temp:
-						opt_ciphers[j].append(t)
-                                        temp = cipher1[2*n*i+2*j+1].split(' ')
-                                        for t in temp:
-                                                opt_ciphers[j].append(t)				
+				# put ciphers
+				temp = cipher1[2*i].split(' ')
+				for t in temp:
+					opt_ciphers.append(t)
+                                temp = cipher1[2*i+1].split(' ')
+                                for t in temp:
+                                        opt_ciphers.append(t)
+				#plain and decommit
+				temp = plain1[i].split(' ')
+				for t in temp:
+                                        opt_plains.append(t)				
 			else:
 				mark1.append("")
 		for i in range(n):
                         if each.votecode == codes2[i]:
                                 mark2.append("Voted")
-                                #2n*i to 2n*(i+1)-1 put ciphers
-                                for j in range(n):
-                                        temp = cipher2[2*n*i+2*j].split(' ')
-                                        for t in temp:
-                                                opt_ciphers[j].append(t)
-					temp = cipher2[2*n*i+2*j+1].split(' ')
-                                        for t in temp:
-                                                opt_ciphers[j].append(t)
+                                # put ciphers
+                                temp = cipher2[2*i].split(' ')
+                                for t in temp:
+                                        opt_ciphers.append(t)
+                                temp = cipher2[2*i+1].split(' ')
+                                for t in temp:
+                                        opt_ciphers.append(t)
+                                #plain and decommit
+                                temp = plain2[i].split(' ')
+                                for t in temp:
+                                        opt_plains.append(t)
                         else:
                                 mark2.append("")
 		#mark feedbacks
@@ -112,17 +121,41 @@ def send_request(e):
 		record.mark2 = ",".join(mark2)
 		record.save()
 	#output for tally
-	for i in range(n):
-		temp_str = "\n".join(opt_ciphers[i])
+	temp_str_c = "\n".join(opt_ciphers)
+	temp_str_d = "\n".join(opt_plains)
 		#f = open('/var/www/finer/EC-ElGamal/debug.txt', 'a')
 		#f.write(temp_str)
 		#f.write("\n\n\n")
 		#f.close
-		p = subprocess.Popen(["sh","/var/www/finer/EC-ElGamal/Tally.sh",temp_str],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	    	output,err = p.communicate()
-		opts[i].votes = int(output)
-		opts[i].save()
-	#store result
+	p = subprocess.Popen(["sh","/var/www/finer/EC-ElGamal/Tally.sh",temp_str_c, temp_str_d],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	output,err = p.communicate()
+	#read the files and create Aux
+	aux = Auxiliary(election = e)
+	if int(output) == 1:
+		aux.verify = True
+	f = open('/var/www/finer/EC-ElGamal/EC_sum.txt')
+        lines = f.readlines()
+        f.close()
+	aux.tallycipher = ",".join(lines)	
+
+        f = open('/var/www/finer/EC-ElGamal/EC_decommit.txt')
+        lines = f.readlines()
+        f.close()
+        aux.tallyplain = ",".join(lines)
+	aux.save()	
+
+	#compute and store result
+	tallyresult = 0
+	T = long(base64.b64decode(lines[0]).encode('hex'),16)
+	max = e.total	
+	for i in range(1,n):
+		tallyresult = T%max
+		T = (T - tallyresult)/max
+		opts[i-1].votes = tallyresult
+		opts[i-1].save()	
+        opts[n-1].votes = T
+        opts[n-1].save()
+
 	e.tally = True
 	e.save()
 	return 1
@@ -202,6 +235,8 @@ def index(request, eid = 0):
 		return HttpResponse('The election ID is invalid!')
 	time = 0
 	options = e.choice_set.all()
+	#short party names only
+	short_opts = [{'votes': x.votes, 'text': x.text.split(";")[0]} for x in options ]
 	table_data = []
 	checkcode = "invalid code"
 	running = 0
@@ -240,7 +275,7 @@ def index(request, eid = 0):
 						balls = Dballot(vbb = new_entry, serial = s, code = codelist[i])
 						balls.save()
 					#return HttpResponse(receipt)
-                                        return render_to_response('feedback.html', {'codes': codelist,'options':options,'rec':receipt}, context_instance=RequestContext(request))
+                                        return render_to_response('feedback.html', {'codes': codelist,'options':short_opts,'rec':receipt}, context_instance=RequestContext(request))
                                 else:
                                         return HttpResponse("invalid code")
 			else:
@@ -284,7 +319,7 @@ def index(request, eid = 0):
 			table_data.append(temp_row)
 		progress = int(e.vbb_set.count()*100/e.total+0.5)
 
-		return render_to_response('vbb.html', {'data':table_data, 'options':options, 'time':time, 'running':running, 'election':e, 'progress':progress}, context_instance=RequestContext(request))
+		return render_to_response('vbb.html', {'data':table_data, 'options':short_opts, 'time':time, 'running':running, 'election':e, 'progress':progress}, context_instance=RequestContext(request))
 
 
 def export(request, eid = 0):

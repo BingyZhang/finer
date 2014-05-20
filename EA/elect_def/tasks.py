@@ -82,6 +82,9 @@ def decrypt(ciphertext, key):
 @shared_task
 def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     #print "test...creating ballot.."
+    #print total
+    #print n
+
     #create ballots
     for v in range(100,total+100):
         serial = str(v)
@@ -91,8 +94,11 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
         recs = ["",""]
 	votes = ["",""]
 	ciphers = ["",""]
+	plains = ["",""]
         for ab in range(2):
-	    p = subprocess.Popen(["sh","/var/www/finer/EC-ElGamal/GenPerm.sh", str(n)],stdout=subprocess.PIPE,stderr=subprocess.PIPE, env=env)
+	    #print "script run"
+
+	    p = subprocess.Popen(["sh","/var/www/finer/EC-ElGamal/GenPerm.sh", str(n), str(total)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	    output,err = p.communicate()
 	    votes[ab] = output
 	    #read from the disk file for ciphers
@@ -109,6 +115,20 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
 		    else: #" " and "," alternating
 			ciphers[ab]+=","	
 		ciphers[ab]+=enc.strip()
+	    #read from the disk file for plains
+            f = open('/var/www/finer/EC-ElGamal/EC_plain.txt')
+            lines = f.readlines()
+            f.close()
+            i = 0
+            for decommit in lines:
+                i+=1
+                if i >= 2:
+                    if i%2 == 0:
+                        plains[ab]+=" "
+                    else: #" " and "," alternating
+                        plains[ab]+=","
+                plains[ab]+=decommit.strip()
+
 	    for i in range(n):
     	        message = bytes(serial+str(ab)+str(i)).encode('utf-8')
     	        c = hmac.new(key, message, digestmod=hashlib.sha256).digest()
@@ -127,7 +147,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
 		    recs[ab]+=","
 	        codes[ab]+=addbars(sc1)
 	        recs[ab]+=sr1
-	new_b = Ballot(election = e, serial = serial, key = skey, votes1 = votes[0],votes2 = votes[1],cipher1 = ciphers[0],cipher2 = ciphers[1], codes1 = codes[0],codes2 = codes[1],rec1 = recs[0],rec2 = recs[1])
+	new_b = Ballot(election = e, serial = serial, key = skey, votes1 = votes[0],votes2 = votes[1],plain1 = plains[0],plain2 = plains[1] ,cipher1 = ciphers[0],cipher2 = ciphers[1], codes1 = codes[0],codes2 = codes[1],rec1 = recs[0],rec2 = recs[1])
         new_b.save()
     #mark as prepared
     e.prepared = True
@@ -232,6 +252,8 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
 	doc = SimpleDocTemplate(buffer, pagesize=A4)
 	style = ParagraphStyle(
         	name='Normal',
+		#firstLineIndent = 0,
+		#leftIndent = 0,
         	fontName='LiberationSansBd',
         	fontSize=14,
     	)
@@ -243,16 +265,21 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
         	firstLineIndent = 0,
     	)
 	#prepare table data
-	data = [['Πολιτικό κόμμα', 'Κωδικός A', 'Απόδειξη A','','Πολιτικό κόμμα', 'Κωδικός B', 'Απόδειξη B']]
-	data2 = [['Πολιτικό κόμμα', 'Κωδικός B', 'Απόδειξη B','','Πολιτικό κόμμα', 'Κωδικός A', 'Απόδειξη A']]
-	for ii in range(len(opts)):
-		tempname = opts[ii].split(';')
-		if ii <23:
-			temprow = [tempname[0],ballot_code1[ii], ballot_rec1[ii],'',tempname[0],ballot_code2[ii],ballot_rec2[ii]]
-			data.append(temprow)
-		else:
-			temprow = [tempname[0],ballot_code2[ii], ballot_rec2[ii],'',tempname[0],ballot_code1[ii],ballot_rec1[ii]]
-                        data2.append(temprow)
+	data = [['Πολιτικό κόμμα', 'Κωδικός A', 'Απόδειξη A','','Πολιτικό κόμμα', 'Κωδικός A', 'Απόδειξη A']]
+	data2 = [['Πολιτικό κόμμα', 'Κωδικός B', 'Απόδειξη B','','Πολιτικό κόμμα', 'Κωδικός B', 'Απόδειξη B']]
+
+	for ii in range(21):
+		tempname1 = opts[2*ii].split(';')
+                tempname2 = opts[2*ii+1].split(';')
+		temprow = [tempname1[0],ballot_code1[2*ii], ballot_rec1[2*ii],'',tempname2[0],ballot_code1[2*ii+1],ballot_rec1[2*ii+1]]
+		data.append(temprow)
+                temprow = [tempname1[0],ballot_code2[2*ii], ballot_rec2[2*ii],'',tempname2[0],ballot_code2[2*ii+1],ballot_rec2[2*ii+1]]
+                data2.append(temprow)
+	#the 43th party.
+        temprow = [tempname1[0],ballot_code1[42], ballot_rec1[42],'','','','']
+        data.append(temprow)
+        temprow = [tempname1[0],ballot_code2[42], ballot_rec2[42],'','','','']
+        data2.append(temprow)
 
 
 	serial = [['Σειριακός αριθμός:',b.serial,'Σειριακός αριθμός:',b.serial]]
@@ -293,11 +320,12 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
         img.save(output,'PNG')
         output.seek(0) #rewind the data
         I = Image(output, width = 150, height = 150)
+	I.hAlign = 'LEFT'
 	parts.append(I)
-    	parts.append(Spacer(1, 0.2 * inch))
+    	parts.append(Spacer(1, 0.3 * inch))
     	parts.append(Paragraph("Εξυπηρετητής Διανομής Ψηφοδελτίων FINER", style))
     	parts.append(Spacer(1, 0.25 * inch))
-    	parts.append( Paragraph("Παρακαλούμε δείτε στην πίσω πλευρά του φύλλου για περισσότερες επιλογές.",style_warning))
+    	parts.append( Paragraph("Παρακαλούμε χρησομοποιείστε οποιαδήποτε από τις δύο πλευρές αυτού του φύλλου.",style_warning))
     
 
     	parts.append(table_serial)
@@ -321,10 +349,10 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     	parts.append(Spacer(1, 0.2 * inch))
     	#drawimage
     	parts.append(I)
-    	parts.append(Spacer(1, 0.2 * inch))
+    	parts.append(Spacer(1, 0.3 * inch))
     	parts.append(Paragraph("Εξυπηρετητής Διανομής Ψηφοδελτίων FINER", style))
     	parts.append(Spacer(1, 0.25 * inch))
-    	parts.append( Paragraph("Παρακαλούμε δείτε στην πίσω πλευρά του φύλλου για περισσότερες επιλογές.",style_warning))
+    	parts.append( Paragraph("Παρακαλούμε χρησομοποιείστε οποιαδήποτε από τις δύο πλευρές αυτού του φύλλου.",style_warning))
 
     	doc.build(parts)
 
@@ -332,6 +360,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
 	#save pdf
         zfile.writestr("Ballots/"+str(i)+".pdf", buffer.getvalue())
         buffer.close()
+
     new_pdf = Pdfballot(election = e, token = stoken)
     new_pdf.save()
     zfile.close()
@@ -385,6 +414,9 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
 	#write cipher
 	temp_list = each.cipher1.split(',')
 	writer.writerow(temp_list)
+	#write plain
+        temp_list = each.plain1.split(',')
+        writer.writerow(temp_list)
 	#do the same for ballot 2
         #encrypt codes
         temp_list = each.codes2.split(',')
@@ -394,6 +426,9 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
         writer.writerow(enc_list)
         #write cipher
         temp_list = each.cipher2.split(',')
+        writer.writerow(temp_list)
+        #write plain
+        temp_list = each.plain2.split(',')
         writer.writerow(temp_list)
     #post
     reply = requests.post(BB_URL+'abb/'+e.EID+'/upload/',files = {'inputfile':ContentFile(output.getvalue(),name = "init.csv")})

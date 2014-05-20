@@ -5,14 +5,9 @@ from vbb.models import Election
 
 class Auxiliary(models.Model):
     election = models.ForeignKey(Election)
-    randomnessA = models.FileField(upload_to='Archives', null=True, blank=True)
-    rand_sigA = models.FileField(upload_to='Archives', null=True, blank=True)
-    randomnessB = models.FileField(upload_to='Archives', null=True, blank=True)
-    rand_sigB = models.FileField(upload_to='Archives', null=True, blank=True)
-    vbb_sig = models.FileField(upload_to='Archives', null=True, blank=True)
-    def_sig = models.FileField(upload_to='Archives', null=True, blank=True)
-    vbb_data = models.FileField(upload_to='Archives',null=True, blank=True)
-    election_def = models.FileField(upload_to='Archives',null=True, blank=True)
+    tallyplain = models.TextField(null=True, blank=True)
+    tallycipher = models.TextField(null=True, blank=True)
+    verify = models.BooleanField(default=False)
 
 class AbbKey(models.Model):
     table = models.IntegerField(default=0)
@@ -62,3 +57,5 @@ class Abbinit(models.Model):
     mark2 = models.TextField(null=True, blank=True)
     rand1 = models.TextField(null=True, blank=True)
     rand2 = models.TextField(null=True, blank=True)
+    plain1 = models.TextField(null=True, blank=True)
+    plain2 = models.TextField(null=True, blank=True)

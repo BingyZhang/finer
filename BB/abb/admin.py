@@ -14,7 +14,7 @@ class AbbDataAdmin(admin.ModelAdmin):
     search_fields = ['column']    
 
 class AuxiliaryAdmin(admin.ModelAdmin):
-    list_display = ('id','randomnessA','randomnessB','vbb_data','election_def')   
+    list_display = ('verify','tallycipher','tallycipher')   
 
 class UpdateInfoAdmin(admin.ModelAdmin):
     list_display = ('text', 'date')

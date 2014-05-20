@@ -13,7 +13,17 @@ from django.core.files import File
 from django.utils import timezone
 from tasks import prepare_ballot
 
+ #support UTF-8
+env = os.environ
+env['PYTHONIOENCODING'] = 'utf-8'
+
+
+
+
 # Create your views here.
+
+party_list2 = ["aaa" for i in range(86)]
+
 party_list = [
 "Ε. Κεντρώων",	"Ένωση Κεντρώων- Βασίλης Λεβέντης",
 "ΑΝΤΑΡΣΥΑ",	"ΑΝΤΑΡΣΥΑ (Αντικαπιταλιστική Αριστερή Συνεργασία για την Ανατροπή) με συντονιστική επιτροπή",
@@ -194,7 +204,7 @@ def index(request):
     	emailbody+= "\nFINER  Election Authority\n"
 
     	#send email         
-    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition: "+q.encode('utf-8'), emailbody.encode('utf-8'),email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition: "+q.encode('utf-8'), emailbody.encode('utf-8'),email],stdout=subprocess.PIPE,stderr=subprocess.PIPE, env=env)
     	output,err = p.communicate()
 	#celery prepare ballots
 	prepare_ballot.delay(new_e, int(total),len(opts), voter_emails, keyemails, intpdf)
@@ -313,7 +323,7 @@ def pubdef(request):
         emailbody+= "\nFINER  Election Authority\n"
 
         #send email         
-    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition: "+q.encode('utf-8'), emailbody.encode('utf-8'),email],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    	p = subprocess.Popen(["sudo","/var/www/finer/bingmail.sh","Election Definition: "+q.encode('utf-8'), emailbody.encode('utf-8'),email],stdout=subprocess.PIPE,stderr=subprocess.PIPE, env=env)
     	output,err = p.communicate()
         #celery prepare ballots
         prepare_ballot.delay(new_e, int(total),len(opts), voter_emails, keyemails,intpdf)

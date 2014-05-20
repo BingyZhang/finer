@@ -87,8 +87,11 @@ def index(request, eid = 0, tab = 1):
             next_page = 0    
         #version 1 or 1,2
         version = [1]
+	finaltally = None
+	resultshow = False
         if e.tally:
             version.append(2)
+	    finaltally = e.auxiliary_set.all()[0]
         Vtable = []
         int_tab = int(tab)
         #version 1
@@ -122,6 +125,7 @@ def index(request, eid = 0, tab = 1):
                     table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':""},{'cipher':temp},{'aux':aux2[i]},{'mark':""},{'rand':""},{}])
             Vtable.append(table)
 	if int_tab == 2:# ver. 2
+	    resultshow = True
 	    table = []
             for entry in current.object_list:
             	enc1 = entry.enc1.split(',')
@@ -164,7 +168,7 @@ def index(request, eid = 0, tab = 1):
             Vtable.append(table)
 	#end of verion 2
         BigData={'Data':Vtable,'Ver':version} 
-        return render_to_response('abb.html', {'election':e,'tab':tab,'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
+        return render_to_response('abb.html', {'election':e,'tab':tab, 'resultshow': resultshow, 'final':finaltally  , 'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
      
 
 
@@ -362,6 +366,8 @@ def upload(request, eid = 0):
 	enc2 = ""
 	cipher1 = ""
 	cipher2 = ""
+	plain1 = ""
+	plain2 = ""
 	code1 = []
 	code2 = []
 	n = 0
@@ -375,32 +381,39 @@ def upload(request, eid = 0):
 		key = row[1]
 	        new_r = Randomstate(election = e, notes = "k1",random = key)
 	        new_r.save()
-	    if counter%5 ==0:
+	    if counter%7 ==0:
 		#serial key
 		row = temp.split(',')
 		serial = row[0]
 		new_bba = Bba(election = e, serial = serial, key = row[1], n = n)
 		new_bba.save()
-	    if	counter%5 ==1:
+	    if	counter%7 ==1:
 		#enc1
 		enc1 = temp
 		row = temp.split(',')
 		k = base64.b64decode(key)
 		for item in row:
 		    code1.append(decrypt(base64.b64decode(item),k))
-            if  counter%5 ==2:
+            if  counter%7 ==2:
                 #cipher1
-                cipher1 = temp	
-            if  counter%5 ==3:
+                cipher1 = temp
+            if  counter%7 ==3:
+                #plain1
+                plain1 = temp
+            if  counter%7 ==4:
                 #enc2
                 enc2 = temp    
                 row = temp.split(',')
                 k = base64.b64decode(key)
                 for item in row:
                     code2.append(decrypt(base64.b64decode(item),k))
-            if  counter > 0 and counter%5 ==4:
+            if  counter%7 ==5:
                 #cipher2
                 cipher2 = temp
+            if  counter > 0 and counter%7 ==6:
+                #cipher2
+                plain2 = temp
+
 		#random aux
 		fake_aux = []
 		fake_rand = []
@@ -409,7 +422,7 @@ def upload(request, eid = 0):
 			fake_rand.append(base64.b64encode(os.urandom(16)))
 		temp1 = ",".join(fake_aux)
 		temp2 = ",".join(fake_rand)
-		new_abb = Abbinit(election = e, codes1 = ",".join(code1), codes2 = ",".join(code2), rand1 = temp2, rand2 = temp2 , aux1 = temp1, aux2 = temp1, zeroone = base64.b64encode(os.urandom(8)),serial = serial, enc1 = enc1, enc2 = enc2, cipher1 = cipher1, cipher2 = cipher2)
+		new_abb = Abbinit(election = e, codes1 = ",".join(code1), codes2 = ",".join(code2), rand1 = temp2, rand2 = temp2 , aux1 = temp1, aux2 = temp1, zeroone = base64.b64encode(os.urandom(8)),serial = serial, enc1 = enc1, enc2 = enc2, cipher1 = cipher1, cipher2 = cipher2,plain1 = plain1, plain2 = plain2)
 		new_abb.save()
 		#clean var
 		code1 = []
