@@ -57,7 +57,7 @@ def send_request(e):
 		e.tally = True
         	e.save()
 		return 0
-	opts = e.choice_set.all()
+	opts = e.choice_set.order_by('id')
 	n = len(opts)
 	#get all for fast disk IO
 	abbs = e.abbinit_set.all()
@@ -148,11 +148,11 @@ def send_request(e):
 	tallyresult = 0
 	T = long(base64.b64decode(lines[0]).encode('hex'),16)
 	max = e.total	
-	for i in range(1,n):
+	for i in range(n):
 		tallyresult = T%max
 		T = (T - tallyresult)/max
-		opts[i-1].votes = tallyresult
-		opts[i-1].save()	
+		opts[i].votes = tallyresult
+		opts[i].save()	
         opts[n-1].votes = T
         opts[n-1].save()
 
@@ -235,8 +235,9 @@ def index(request, eid = 0):
 		return HttpResponse('The election ID is invalid!')
 	time = 0
 	options = e.choice_set.all()
-	#short party names only
-	short_opts = [{'votes': x.votes, 'text': x.text.split(";")[0]} for x in options ]
+	#short party names only sorted
+	short_opts = [[x.votes, x.text.split(";")[0]] for x in options ]
+	sorted_opts = sorted(short_opts,reverse=True)
 	table_data = []
 	checkcode = "invalid code"
 	running = 0
@@ -319,7 +320,7 @@ def index(request, eid = 0):
 			table_data.append(temp_row)
 		progress = int(e.vbb_set.count()*100/e.total+0.5)
 
-		return render_to_response('vbb.html', {'data':table_data, 'options':short_opts, 'time':time, 'running':running, 'election':e, 'progress':progress}, context_instance=RequestContext(request))
+		return render_to_response('vbb.html', {'data':table_data, 'options':sorted_opts, 'time':time, 'running':running, 'election':e, 'progress':progress}, context_instance=RequestContext(request))
 
 
 def export(request, eid = 0):

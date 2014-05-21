@@ -6,7 +6,7 @@ import time, requests, hashlib,subprocess
 from datetime import datetime
 from django.utils import timezone
 from elect_def.forms import DefForm
-from elect_def.models import Election, Choice, Assignment
+from elect_def.models import Election, Choice, Assignment,Tokens
 from django.template import RequestContext
 import cStringIO, zipfile, csv, copy,os, base64, random
 from django.core.files import File
@@ -197,7 +197,7 @@ def client(request, eid = 0,token = 0):
     return render_to_response('voteGR.html',{'bb_url':ABB_URL, 'serial':b.serial , 'time':time, 'running':running, 'election':e,'c1':zip(ballot_code1,opts),'c2':zip(ballot_code2,opts)}, context_instance=RequestContext(request))
 
 
-def sample(request, eid = 0,token = 0):
+def sample(request, eid = 0,token = 0, side = 0):
     try:
         e = Election.objects.get(EID=eid)
     except Election.DoesNotExist:
@@ -210,6 +210,7 @@ def sample(request, eid = 0,token = 0):
     #name = "Voter"    
     options = e.choice_set.values('text')
     opts = [x['text'].split(';') for x in options]
+    opts_short = [x['text'].split(';')[0] for x in options]
     running = 0
     if e.was_started():
         running = 1
@@ -224,8 +225,10 @@ def sample(request, eid = 0,token = 0):
     codes2 = b.codes2.split(',')
     rec1 = b.rec1.split(',')
     rec2 = b.rec2.split(',')
-    perm1 = b.votes1.split(',')
-    perm2 = b.votes2.split(',')
+##################################String sort bug!!!!!!!!!!!!#######################
+    perm1 = [int(x) for x in b.votes1.split(',')]
+    perm2 = [int(x) for x in b.votes2.split(',')]
+####################################################################################
     #sort according to perm1
     sorted1 = sorted(zip(perm1,codes1,rec1))
     sorted2 = sorted(zip(perm2,codes2,rec2))
@@ -237,7 +240,7 @@ def sample(request, eid = 0,token = 0):
     #prepare 6*8 table
     option_table = []
     counter = 0
-    for i in range(8):
+    for i in range(7):
 	temprow = []
 	for j in range(6):
 	    if 6*i+j < len(opts):
@@ -247,7 +250,9 @@ def sample(request, eid = 0,token = 0):
 		break
 	option_table.append(temprow)
 
-    return render_to_response('sampleGR.html',{'bb_url':ABB_URL, 'serial':b.serial , 'time':time,'options':option_table, 'running':running, 'election':e,'c1':zip(ballot_code1,opts),'c2':zip(ballot_code2,opts)})
+    #for AB ballot
+    AB = int(side)
+    return render_to_response('sampleGR.html',{'bb_url':ABB_URL, 'AB':AB, 'serial':b.serial , 'time':time,'options':option_table, 'running':running, 'election':e,'c1':zip(ballot_code1,opts_short),'c2':zip(ballot_code2,opts_short)})
 
 
 

@@ -445,8 +445,8 @@ def init(request):
         eid = request.POST['eid']
         total = request.POST['total']
         opts = []
-        # maximum 50 options
-        for i in range(0,50):
+        # maximum 100 options
+        for i in range(0,100):
             temp = request.POST.get('opt'+str(i),'')
             if temp != '':
                 opts.append(temp)

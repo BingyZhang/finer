@@ -33,7 +33,7 @@
         <p>  6. ψηφοφορία έχει παύσει προσωρινά.</p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Εντάξει</button> 
+	<button type="button" class="btn btn-default" data-dismiss="modal">Εντάξει</button> 
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -54,10 +54,10 @@
    		<button type="button" class="btn btn-lg disabled" id="receipt"></button>
 		</div>
 		<p></p>
-		<p>ΥΓ: παρακαλούμε μην υποβάλετε την ψήφο σας ξανά, διότι θα απορριφθεί λόγω διπλοψηφίας.</p>
+		<p>ΥΓ: Σας ευχαριστούμε για τη συμμετοχή σας. Παρακαλούμε συμπληρώστε το ερωτηματολόγιό μας (χρόνος συμπλήρωσης το πολύ δύο λεπτά) πατώντας πάνω στο 'ΕΡΩΤΗΜΑΤΟΛΟΓΙΟ'.</p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal" id="closeall">Εντάξει</button>
+          <a href="https://www.surveymonkey.com/s/7LVDF3F" type="button" class="btn btn-default" >ΕΡΩΤΗΜΑΤΟΛΟΓΙΟ</a>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -82,11 +82,16 @@
 <div align="center">
 <img src="{% static "images/" %}{{ opt.id }}.gif" class="img-thumbnail">
 </div>
-
+<br/>
+<br/>
+<div align="center">
+<form role="form" action="" method="post" id="formvote{{opt.id}}">
+<button type="submit"  class="btn btn-lg btn-success">ψήφος</button>
+</form>
+</div>
 </div>
 <div class="modal-footer">
-<button type="button" class="btn btn-lg btn-default" data-dismiss="modal">αλλαγή</button>
-<button type="button" class="btn btn-lg btn-success">ψήφος</button>
+<button type="button" class="btn btn-lg btn-default" data-dismiss="modal">πίσω</button>
 </div>
 </div>
 </div>
@@ -133,59 +138,58 @@
 <!-- Submit form -->
 <script type="text/javascript">
 	$(document).ready(function(){
-		var start = new Date().getTime();
-		var opts1 = new Array();
-		{% for opt in c1 %}
-                opts1[{{forloop.counter}}]="{{opt.0}}"; 
+		var opts = new Array();
+		{% if AB = 0 %}
+		{% for pair in c1 %}
+                opts[{{forloop.counter}}]="{{pair.0}}"; 
                 {% endfor %}
-		var opts2 = new Array();
-                {% for opt in c2 %}
-                opts2[{{forloop.counter}}]="{{opt.0}}";
+		{% else %}
+		{% for pair in c2 %}
+                opts[{{forloop.counter}}]="{{pair.0}}";
                 {% endfor %}
+		{% endif %}
 
-		$("closeall").click(function () {
-	window.close();
-		 });
-		$("#formvote1").submit(function(){
-			var time = new Date().getTime() - start;
-			var code = '';
-			var feedbacks = new Array();
-			var which = $('input[name=options]:checked').val();
-			if (time%2 == 0){
-				{% for opt in c2 %}
-                        	feedbacks[{{forloop.counter}}]="{{opt.0}},{{opt.1}}";         
-                        	{% endfor %}
-				code = opts1[which];
-			}
-			else {
-                                {% for opt in c1 %}
-                                feedbacks[{{forloop.counter}}]="{{opt.0}},{{opt.1}}"; 
-                                {% endfor %}
-				code = opts2[which];
-			};
-			$.post("{{bb_url}}/vbb/{{election.EID}}/client/",
-			{serial:{{serial}},
-			code:code,
-			{% for opt in c1 %}
-                	feedback{{forloop.counter}}:feedbacks[{{forloop.counter}}],
-                	{% endfor %}
-			},
-			function(data,status){
-				if(data == "invalid code"){
-					$('#invalidModal').modal('show');
-				}
-				else {
-					$('#receipt').replaceWith('<button type="button" class="btn btn-lg disabled" id="receipt">'+data+'</button>');
-					$('#feedbackModal').modal('show');
-				}
-			})
-			.fail(function(xhr) {
-				console.log("Error: " + xhr.statusText);
-				alert("Error: " + xhr.statusText);
-			});
-			
-			return false;
-		});
+
+		var feedbacks = new Array();
+		{% if AB = 0 %}
+                {% for opt in c2 %}
+                feedbacks[{{forloop.counter}}]="{{opt.0}},{{opt.1}}";
+                {% endfor %}
+                {% else %}
+                {% for opt in c1 %}
+                feedbacks[{{forloop.counter}}]="{{opt.0}},{{opt.1}}";
+                {% endfor %}
+                {% endif %}
+
+		{% for any in c1  %}
+		$("#formvote{{forloop.counter}}").submit(function(){
+			$('#party{{forloop.counter}}').modal('hide');
+                        $.post("{{bb_url}}/vbb/{{election.EID}}/client/",
+                        {serial:{{serial}},
+                        code:opts[{{forloop.counter}}],
+                        {% for opt in c1 %}
+                        feedback{{forloop.counter}}:feedbacks[{{forloop.counter}}],
+                        {% endfor %}
+                        },
+                        function(data,status){
+                                if(data == "invalid code"){
+                                        $('#invalidModal').modal('show');
+                                }
+                                else {
+                                        $('#receipt').replaceWith('<button type="button" class="btn btn-lg disabled" id="receipt">'+data+'</button>');
+                                        $('#feedbackModal').modal('show');
+                                }
+                        })
+                        .fail(function(xhr) {
+                                console.log("Error: " + xhr.statusText);
+                                alert("Error: " + xhr.statusText);
+                        });
+
+                        return false;
+                });
+
+		{% endfor%}
+
 	});
 </script>
 {% endblock %}

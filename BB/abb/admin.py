@@ -14,7 +14,7 @@ class AbbDataAdmin(admin.ModelAdmin):
     search_fields = ['column']    
 
 class AuxiliaryAdmin(admin.ModelAdmin):
-    list_display = ('verify','tallycipher','tallycipher')   
+    list_display = ('verify','tallycipher','tallyplain')   
 
 class UpdateInfoAdmin(admin.ModelAdmin):
     list_display = ('text', 'date')

@@ -154,7 +154,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     e.save()
     # assign email ballots
     #get choices
-    options = e.choice_set.values('text')
+    options = e.choice_set.order_by('id').values('text')
     opts = [x['text'] for x in options]
     #get all the unassigned ballots
     unused = Ballot.objects.filter(election = e)# all are not used
@@ -179,8 +179,10 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     	codes2 = b.codes2.split(',')
     	rec1 = b.rec1.split(',')
     	rec2 = b.rec2.split(',')
-    	perm1 = b.votes1.split(',')
-    	perm2 = b.votes2.split(',')
+##################################String sort bug!!!!!!!!!!!!#######################
+    	perm1 = [int(x) for x in b.votes1.split(',')]
+    	perm2 = [int(x) for x in b.votes2.split(',')]
+####################################################################################
     	#sort according to perm1
     	sorted1 = sorted(zip(perm1,codes1,rec1))
     	sorted2 = sorted(zip(perm2,codes2,rec2))
@@ -229,9 +231,10 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     	codes2 = b.codes2.split(',')
     	rec1 = b.rec1.split(',')
     	rec2 = b.rec2.split(',')
-    	perm1 = b.votes1.split(',')
-    	perm2 = b.votes2.split(',')
-
+##################################String sort bug!!!!!!!!!!!!#######################
+        perm1 = [int(x) for x in b.votes1.split(',')]
+        perm2 = [int(x) for x in b.votes2.split(',')]
+####################################################################################
     	#sort according to perm1
     	sorted1 = sorted(zip(perm1,codes1,rec1))
     	sorted2 = sorted(zip(perm2,codes2,rec2))
@@ -249,20 +252,23 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     	pdfmetrics.registerFont(TTFont('LiberationSansIt', ttffont+'LiberationSans-Italic.ttf'))
     	pdfmetrics.registerFont(TTFont('LiberationSansBI', ttffont+'LiberationSans-BoldItalic.ttf'))
 	#create pdf doc
-	doc = SimpleDocTemplate(buffer, pagesize=A4)
+	doc = SimpleDocTemplate(buffer, pagesize=A4,leftMargin=0.1*inch,rightMargin=0.1*inch)
 	style = ParagraphStyle(
         	name='Normal',
 		#firstLineIndent = 0,
 		#leftIndent = 0,
         	fontName='LiberationSansBd',
         	fontSize=14,
+		leftMargin=0.3*inch,
+            	firstLineIndent = 0.3*inch,
     	)
     
     	style_warning = ParagraphStyle(
         	name='Normal',
         	fontName='LiberationSans',
         	fontSize=12,
-        	firstLineIndent = 0,
+        	leftMargin=0.5*inch,
+                firstLineIndent = 0.5*inch,
     	)
 	#prepare table data
 	data = [['Πολιτικό κόμμα', 'Κωδικός A', 'Απόδειξη A','','Πολιτικό κόμμα', 'Κωδικός A', 'Απόδειξη A']]
@@ -276,10 +282,10 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
                 temprow = [tempname1[0],ballot_code2[2*ii], ballot_rec2[2*ii],'',tempname2[0],ballot_code2[2*ii+1],ballot_rec2[2*ii+1]]
                 data2.append(temprow)
 	#the 43th party.
-        temprow = [tempname1[0],ballot_code1[42], ballot_rec1[42],'','','','']
-        data.append(temprow)
-        temprow = [tempname1[0],ballot_code2[42], ballot_rec2[42],'','','','']
-        data2.append(temprow)
+        #temprow = [tempname1[0],ballot_code1[42], ballot_rec1[42],'','','','']
+        #data.append(temprow)
+        #temprow = [tempname1[0],ballot_code2[42], ballot_rec2[42],'','','','']
+        #data2.append(temprow)
 
 
 	serial = [['Σειριακός αριθμός:',b.serial,'Σειριακός αριθμός:',b.serial]]
@@ -313,9 +319,9 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     
     	parts.append(table_with_style)
 
-    	parts.append(Spacer(1, 0.2 * inch))
+    	parts.append(Spacer(1, 0.4 * inch))
     	#drawimage
-	img = qrcode.make(SAMPLE_URL+e.EID+"/"+stoken+"/")
+	img = qrcode.make(SAMPLE_URL+e.EID+"/"+stoken+"/0/")
         output = cStringIO.StringIO() ## temp QR file
         img.save(output,'PNG')
         output.seek(0) #rewind the data
@@ -326,7 +332,8 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     	parts.append(Paragraph("Εξυπηρετητής Διανομής Ψηφοδελτίων FINER", style))
     	parts.append(Spacer(1, 0.25 * inch))
     	parts.append( Paragraph("Παρακαλούμε χρησομοποιείστε οποιαδήποτε από τις δύο πλευρές αυτού του φύλλου.",style_warning))
-    
+#########append url for debug
+    	#parts.append(Paragraph(SAMPLE_URL+e.EID+"/"+stoken+"/",style_warning))
 
     	parts.append(table_serial)
     	parts.append(Spacer(1, 0.2 * inch))
@@ -346,9 +353,16 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     
     	parts.append(table_with_style)
 
-    	parts.append(Spacer(1, 0.2 * inch))
+    	parts.append(Spacer(1, 0.4 * inch))
     	#drawimage
-    	parts.append(I)
+        img = qrcode.make(SAMPLE_URL+e.EID+"/"+stoken+"/1/")
+        output = cStringIO.StringIO() ## temp QR file
+        img.save(output,'PNG')
+        output.seek(0) #rewind the data
+        I = Image(output, width = 150, height = 150)
+        I.hAlign = 'LEFT'
+        parts.append(I)
+
     	parts.append(Spacer(1, 0.3 * inch))
     	parts.append(Paragraph("Εξυπηρετητής Διανομής Ψηφοδελτίων FINER", style))
     	parts.append(Spacer(1, 0.25 * inch))

@@ -163,7 +163,7 @@ fieldset[disabled] .btn-sample.active {
       <div class="manypopovers">
 	{% if resultshow %} 
 	<div align="center" style="word-wrap: break-word">
-	<button type="button" class="btn {% if final.verify %}btn-success{% else %}btn-danger{% endif %}" data-toggle="popover"
+	<label><font size ="5" color="blue">Tally: </font></label> <button type="button" class="btn {% if final.verify %}btn-success{% else %}btn-danger{% endif %}" data-toggle="popover"
       data-content="{{final.tallycipher}}">{{final.tallyplain}}</button>
 	</div>
 	{% endif%}
