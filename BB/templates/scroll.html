@@ -36,7 +36,7 @@
                  data-content="{{entry.aux}}">Committed</button>
             {% endif %}
             {% if forloop.counter = 5 and entry.mark %}
-            <button style="width: 100px" type="button" class="btn btn-sample">{% ifequal entry.mark "Voted" %}<span class="glyphicon glyphicon-ok"></span>    {% endifequal %} {{entry.mark}}</button>
+            <button style="width: 110px" type="button" class="btn btn-sample">{% ifequal entry.mark "Voted" %}<span class="glyphicon glyphicon-ok"></span>    {% endifequal %} {{entry.mark}}</button>
             {% endif %}
             {% if forloop.counter = 6 and entry.rand  %}
             <button style="width: 60px" type="button" class="btn" data-toggle="popover"

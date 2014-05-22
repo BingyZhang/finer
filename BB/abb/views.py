@@ -66,69 +66,68 @@ def index(request, eid = 0, tab = 1):
 	e = Election.objects.get(EID=eid)
     except Election.DoesNotExist:
 	return HttpResponse('The election ID is invalid!')
-    if request.method == 'POST':
-        response = HttpResponse(content_type="application/zip")  
-        response['Content-Disposition'] = 'attachment; filename=FINER_ABB.zip'
-        #empty zip
-        return response
-    
+    #if not ready
+    if not e.prepared:
+        return HttpResponse('Not ready yet!')
+    abb_list = e.abbinit_set.all()
+    p = Paginator(abb_list,1)
 
+    if request.method == 'POST':
+	page = int(request.POST.get('serial','100'))-99
+	if page > e.total:
+	    page = 1
+	current = p.page(page)
     else:
-        #if not ready
-        if not e.prepared:
-            return HttpResponse('Not ready yet!')
-        abb_list = e.abbinit_set.all()
-        p = Paginator(abb_list,2)
         page = 1
         current = p.page(page)
-        if current.has_next():
-            next_page = page+1
-        else:
-            next_page = 0    
-        #version 1 or 1,2
-        version = [1]
-	finaltally = None
-	resultshow = False
-        if e.tally:
-            version.append(2)
-	    finaltally = e.auxiliary_set.all()[0]
-        Vtable = []
-        int_tab = int(tab)
-        #version 1
-        if int_tab == 1:
-            table = []
-            for entry in current.object_list:	
-                enc1 = entry.enc1.split(',')
-                enc2 = entry.enc1.split(',')
-                elen = len(enc1)
-                cipher1 = entry.cipher1.split(',')
-                clen = len(cipher1)
-                rowlen = clen/elen
-                cipher2 = entry.cipher2.split(',')
-                #fake aux column
-                aux1 = entry.aux1.split(',')
-                aux2 = entry.aux2.split(',')
-                zeroone = entry.zeroone
-                for i in range(elen):
-                    if i ==0:
-                        s = entry.serial+" A"
-                    else:
-                        s = ''
-                    temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])    
-                    table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':""},{'cipher':temp},{'aux':aux1[i]},{'mark':""},{'rand':""},{}])
-                for i in range(elen):
-                    if i ==0:
-                        s = entry.serial+" B"
-                    else:
-                        s = ''
-                    temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])     
-                    table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':""},{'cipher':temp},{'aux':aux2[i]},{'mark':""},{'rand':""},{}])
-            Vtable.append(table)
-	if int_tab == 2:# ver. 2
-	    resultshow = True
-	    table = []
-            for entry in current.object_list:
-            	enc1 = entry.enc1.split(',')
+    if current.has_next():
+        next_page = page+1
+    else:
+        next_page = 0    
+    #version 1 or 1,2
+    version = [1]
+    finaltally = None
+    resultshow = False
+    if e.tally:
+        version.append(2)
+	finaltally = e.auxiliary_set.all()[0]
+    Vtable = []
+    int_tab = int(tab)
+    #version 1
+    if int_tab == 1:
+        table = []
+        for entry in current.object_list:	
+            enc1 = entry.enc1.split(',')
+            enc2 = entry.enc1.split(',')
+            elen = len(enc1)
+            cipher1 = entry.cipher1.split(',')
+            clen = len(cipher1)
+            rowlen = clen/elen
+            cipher2 = entry.cipher2.split(',')
+            #fake aux column
+            aux1 = entry.aux1.split(',')
+            aux2 = entry.aux2.split(',')
+            zeroone = entry.zeroone
+            for i in range(elen):
+                if i ==0:
+                    s = entry.serial+" A"
+                else:
+                    s = ''
+                temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])    
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc1[i],'code':""},{'cipher':temp},{'aux':aux1[i]},{'mark':""},{'rand':""},{}])
+            for i in range(elen):
+                if i ==0:
+                    s = entry.serial+" B"
+                else:
+                    s = ''
+                temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])     
+                table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':""},{'cipher':temp},{'aux':aux2[i]},{'mark':""},{'rand':""},{}])
+        Vtable.append(table)
+    if int_tab == 2:# ver. 2
+	resultshow = True
+	table = []
+        for entry in current.object_list:
+        	enc1 = entry.enc1.split(',')
             	enc2 = entry.enc1.split(',')
             	elen = len(enc1)
             	cipher1 = entry.cipher1.split(',')
@@ -165,10 +164,10 @@ def index(request, eid = 0, tab = 1):
                         s = ''
                     temp = ",".join(cipher1[rowlen*i:rowlen*(i+1)])
                     table.append([{'bit':zeroone,'serial':s},{'enc':enc2[i],'code':code2[i]},{'cipher':temp},{'aux':aux2[i]},{'mark':mark2[i]},{'rand':rand2[i]},{'post':enc1[i][5:]}])
-            Vtable.append(table)
-	#end of verion 2
-        BigData={'Data':Vtable,'Ver':version} 
-        return render_to_response('abb.html', {'election':e,'tab':tab, 'resultshow': resultshow, 'final':finaltally  , 'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
+        Vtable.append(table)
+    #end of verion 2
+    BigData={'Data':Vtable,'Ver':version} 
+    return render_to_response('abb.html', {'election':e,'tab':tab, 'resultshow': resultshow, 'final':finaltally  , 'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
      
 
 
@@ -182,7 +181,7 @@ def scroll(request, eid = 0, tab = 1, page = 1):
     if not e.prepared:
         return HttpResponse('Not ready yet!')
     abb_list = e.abbinit_set.all()
-    p = Paginator(abb_list,2)
+    p = Paginator(abb_list,1)
     int_page = int(page)
     current = p.page(int_page)
     if current.has_next():
