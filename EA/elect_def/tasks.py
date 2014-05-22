@@ -337,9 +337,9 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
     	parts.append(table_img)
 	#parts.append(I)
     	parts.append(Spacer(1, 0.3 * inch))
-    	parts.append(Paragraph("Εξυπηρετητής Διανομής Ψηφοδελτίων FINER", style))
+        parts.append(Paragraph("Εξυπηρετητής Ψηφοδελτίων FINER &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp "+BB_URL+"abb/"+e.EID+"/", style))
     	parts.append(Spacer(1, 0.25 * inch))
-    	parts.append( Paragraph("Παρακαλούμε χρησομοποιείστε οποιαδήποτε από τις δύο πλευρές αυτού του φύλλου.",style_warning))
+    	parts.append( Paragraph("Παρακαλούμε χρησιμοποιήστε οποιαδήποτε από τις δύο πλευρές αυτού του φύλλου.",style_warning))
 #########append url for debug
     	#parts.append(Paragraph(SAMPLE_URL+e.EID+"/"+stoken+"/",style_warning))
 
@@ -378,11 +378,10 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
         ]))
         parts.append(table_img)
         #parts.append(I)
-
     	parts.append(Spacer(1, 0.3 * inch))
-    	parts.append(Paragraph("Εξυπηρετητής Διανομής Ψηφοδελτίων FINER", style))
+    	parts.append(Paragraph("Εξυπηρετητής Ψηφοδελτίων FINER &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp "+BB_URL+"abb/"+e.EID+"/", style))
     	parts.append(Spacer(1, 0.25 * inch))
-    	parts.append( Paragraph("Παρακαλούμε χρησομοποιείστε οποιαδήποτε από τις δύο πλευρές αυτού του φύλλου.",style_warning))
+    	parts.append( Paragraph("Παρακαλούμε χρησιμοποιήστε οποιαδήποτε από τις δύο πλευρές αυτού του φύλλου.",style_warning))
 
     	doc.build(parts)
 
