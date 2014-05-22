@@ -153,8 +153,6 @@ def send_request(e):
 		T = (T - tallyresult)/max
 		opts[i].votes = tallyresult
 		opts[i].save()	
-        opts[n-1].votes = T
-        opts[n-1].save()
 
 	e.tally = True
 	e.save()

@@ -78,7 +78,7 @@ def index(request, eid = 0, tab = 1):
         if not e.prepared:
             return HttpResponse('Not ready yet!')
         abb_list = e.abbinit_set.all()
-        p = Paginator(abb_list,20)
+        p = Paginator(abb_list,2)
         page = 1
         current = p.page(page)
         if current.has_next():
@@ -182,7 +182,7 @@ def scroll(request, eid = 0, tab = 1, page = 1):
     if not e.prepared:
         return HttpResponse('Not ready yet!')
     abb_list = e.abbinit_set.all()
-    p = Paginator(abb_list,20)
+    p = Paginator(abb_list,2)
     int_page = int(page)
     current = p.page(int_page)
     if current.has_next():

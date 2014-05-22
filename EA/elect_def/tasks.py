@@ -327,7 +327,15 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
         output.seek(0) #rewind the data
         I = Image(output, width = 150, height = 150)
 	I.hAlign = 'LEFT'
-	parts.append(I)
+	table_img = Table([[I,"A"]], [4*inch,4* inch])
+    	table_img.setStyle(TableStyle([
+    	('FONT', (0, 0), (-1, 0), 'LiberationSansBd'),
+    	('FONTSIZE', (0, 0), (-1, -1), 120),
+    	('ALIGN', (0, 0), (-1, 0), 'LEFT'),
+    	('VALIGN', (0, 0), (-1, 0), 'TOP'),
+    	]))
+    	parts.append(table_img)
+	#parts.append(I)
     	parts.append(Spacer(1, 0.3 * inch))
     	parts.append(Paragraph("Εξυπηρετητής Διανομής Ψηφοδελτίων FINER", style))
     	parts.append(Spacer(1, 0.25 * inch))
@@ -361,7 +369,15 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
         output.seek(0) #rewind the data
         I = Image(output, width = 150, height = 150)
         I.hAlign = 'LEFT'
-        parts.append(I)
+        table_img = Table([[I,"B"]], [4*inch,4* inch])
+        table_img.setStyle(TableStyle([
+        ('FONT', (0, 0), (-1, 0), 'LiberationSansBd'),
+        ('FONTSIZE', (0, 0), (-1, -1), 120),
+        ('ALIGN', (0, 0), (-1, 0), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, 0), 'TOP'),
+        ]))
+        parts.append(table_img)
+        #parts.append(I)
 
     	parts.append(Spacer(1, 0.3 * inch))
     	parts.append(Paragraph("Εξυπηρετητής Διανομής Ψηφοδελτίων FINER", style))
