@@ -61,7 +61,7 @@ def empty(request):
 
 
 
-def index(request, eid = 0, tab = 1):
+def index(request, eid = 0, tab = -1):
     try:
 	e = Election.objects.get(EID=eid)
     except Election.DoesNotExist:
@@ -90,16 +90,21 @@ def index(request, eid = 0, tab = 1):
         next_page = page+1
     else:
         next_page = 0    
+    int_tab = int(tab)
     #version 1 or 1,2
     version = [1]
     finaltally = None
     resultshow = False
     if e.tally:
 	resultshow = True
+	if int_tab == -1:
+	    int_tab = 2
         version.append(2)
 	finaltally = e.auxiliary_set.all()[0]
+    else:
+	if int_tab == -1:
+            int_tab = 1
     Vtable = []
-    int_tab = int(tab)
     #version 1
     if int_tab == 1:
         table = []
@@ -173,7 +178,7 @@ def index(request, eid = 0, tab = 1):
         Vtable.append(table)
     #end of verion 2
     BigData={'Data':Vtable,'Ver':version} 
-    return render_to_response('abb.html', {'election':e,'tab':tab, 'options':sorted_opts,  'resultshow': resultshow, 'final':finaltally  , 'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
+    return render_to_response('abb.html', {'election':e,'tab':int_tab, 'options':sorted_opts,  'resultshow': resultshow, 'final':finaltally  , 'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
      
 
 
