@@ -157,7 +157,7 @@ fieldset[disabled] .btn-sample.active {
 
    <ul class="pagination">
     {% for ver in BigData.Ver %}
-    <li {% if ver|add:"0" = tab|add:"0" %}class="active"{% endif %} id="V{{num}}"><a href="http://tal.di.uoa.gr/finer/abb/{{election.EID}}/{{ver}}/">Ver. {{ver}}</a></li>
+    <li {% if ver|add:"0" = tab|add:"0" %}class="active"{% endif %} id="V{{num}}"><a href="https://tal.di.uoa.gr/finer/abb/{{election.EID}}/{{ver}}/">Ver. {{ver}}</a></li>
     {% endfor %}
    </ul>      
 
@@ -220,7 +220,7 @@ fieldset[disabled] .btn-sample.active {
        </table>
 	{% if next_page %}
 	<div class="scroll">
-  	   <div class="next"> <a href="http://tal.di.uoa.gr/finer/abb/{{election.EID}}/{{tab}}/{{next_page}}/">next</a></div>
+  	   <div class="next"> <a href="https://tal.di.uoa.gr/finer/abb/{{election.EID}}/{{tab}}/{{next_page}}/">next</a></div>
 	</div>	    
     {% endif %}
 	 {% endfor %}   <!-- smalldata -->  

@@ -82,7 +82,7 @@ party_list = [
 
 
 
-BB_URL = "http://tal.di.uoa.gr/finer/"
+BB_URL = "https://tal.di.uoa.gr/finer/"
 
 def base36encode(number, alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
     """Converts an integer to a base36 string."""
@@ -158,7 +158,7 @@ def index(request):
         files = { 'question': q, 'start':start,'end':end, 'eid':eid,'total':total}
         for i in range(len(opts)):
             files["opt"+str(i)] = opts[i]
-        r = requests.post(BB_URL+'def/',data = files)
+        r = requests.post(BB_URL+'def/',data = files, verify=False)
         #if r != "success":
         #    return HttpResponse(r)#('Error!')
 
@@ -279,7 +279,7 @@ def pubdef(request):
         files = { 'question': q, 'start':start,'end':end, 'eid':eid,'total':total}
         for i in range(len(opts)):
             files["opt"+str(i)] = opts[i]
-        r = requests.post(BB_URL+'def/',data = files)
+        r = requests.post(BB_URL+'def/',data = files, verify=False)
         #if r != "success":
         #    return HttpResponse(r)#('Error!')
         #create election

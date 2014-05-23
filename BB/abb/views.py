@@ -79,7 +79,12 @@ def index(request, eid = 0, tab = -1):
     p = Paginator(abb_list,1)
 
     if request.method == 'POST':
-	page = int(request.POST.get('serial','100'))-99
+	try:
+	    check_serial = int(request.POST.get('serial','100'))
+	except ValueError:
+	    check_serial = 100#first one
+	page = check_serial-99
+
 	if page > e.total:
 	    page = 1
 	current = p.page(page)

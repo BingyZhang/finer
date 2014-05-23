@@ -12,4 +12,5 @@ urlpatterns = patterns('',
     url(r'^def/', 'abb.views.init'),
     url(r'^keyholder/(?P<eid>\w+)/$', 'vbb.views.keyholder'),
     url(r'^test/(?P<tab>\d+)/$', 'vbb.views.test'),
+    url(r'^thanks/$', 'vbb.views.thanks'),
 ) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

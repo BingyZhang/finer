@@ -537,3 +537,8 @@ def test(request, tab = 0):
     p.save()
     
     return response
+
+
+
+def thanks(request):
+    return render_to_response('thanks.html')
