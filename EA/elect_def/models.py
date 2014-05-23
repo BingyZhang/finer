@@ -21,22 +21,22 @@ class Election(models.Model):
 	def was_ended(self):
 		return timezone.now() >= self.end
 
-	def __str__(self):
-		return str(self.question)
+	def __unicode__(self):
+		return self.question
 
 class Pdfballot(models.Model):
 	election = models.ForeignKey(Election)
 	token = models.CharField(max_length=1024)
 	pdf = models.FileField(upload_to='Archives',null=True, blank=True)
-	def __str__(self):
+	def __unicode__(self):
                 return str(self.token)
 
 class Choice(models.Model):    
 	election = models.ForeignKey(Election)
 	text = models.CharField(max_length=1024)
 	votes = models.IntegerField(default=0)
-	def __str__(self):
-		return str(self.text)
+	def __unicode__(self):
+		return self.text
 
 class Ballot(models.Model):
 	election = models.ForeignKey(Election)
@@ -53,7 +53,7 @@ class Ballot(models.Model):
 	votes2 = models.TextField(null=True, blank=True)
 	cipher2 = models.TextField(null=True, blank=True)
 	rec2 = models.TextField(null=True, blank=True)
-	def __str__(self):
+	def __unicode__(self):
 		return "Serial#: "+str(self.serial)
 
 class Assignment(models.Model):
@@ -62,19 +62,19 @@ class Assignment(models.Model):
         serial = models.CharField(max_length=1024)
 	#ballot = models.FileField(upload_to='Archives/Ballots',null=True, blank=True)
 	#qr = models.FileField(upload_to='Archives/QRs',null=True, blank=True)
-        def __str__(self):
+        def __unicode__(self):
                 return str(self.vID)
 
 class Tokens(models.Model):
         election = models.ForeignKey(Election)
         token = models.CharField(max_length=1024)
         email = models.CharField(max_length=1024)
-        def __str__(self):
+        def __unicode__(self):
                 return str(self.token)
 
 class Randomstate(models.Model):
         election = models.ForeignKey(Election)
         notes = models.CharField(max_length=256)
         random = models.CharField(max_length=1024)
-        def __str__(self):
+        def __unicode__(self):
                 return str(self.notes)

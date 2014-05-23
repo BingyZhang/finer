@@ -17,7 +17,7 @@ class AbbKey(models.Model):
     decommitment = models.CharField(max_length=2048,null=True, blank=True)
     election = models.ForeignKey(Election)
     version = models.IntegerField(default=0)   
-    def __str__(self):
+    def __unicode__(self):
         return "Table "+str(self.table)+" Ver. "+ str(self.version)
     
 class AbbData(models.Model):
@@ -28,7 +28,7 @@ class AbbData(models.Model):
     plaintext = models.TextField(null=True, blank=True)
     election = models.ForeignKey(Election)
     version = models.IntegerField(default=0)   
-    def __str__(self):
+    def __unicode__(self):
         return "Table "+str(self.table)+" Ver. "+ str(self.version)    
 
 class UpdateInfo(models.Model):
@@ -38,7 +38,7 @@ class UpdateInfo(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     file = models.FileField(upload_to='Archives/op_files',null=True, blank=True)
     sig = models.FileField(upload_to='Archives/signatures',null=True, blank=True)
-    def __str__(self):
+    def __unicode__(self):
         return "Op: "+str(self.text)+" Date: "+ str(self.date)
 
 class Abbinit(models.Model):
