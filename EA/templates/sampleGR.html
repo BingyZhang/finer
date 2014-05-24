@@ -21,19 +21,19 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title"><span class="glyphicon glyphicon-warning-sign"></span> ψήφος σας δεν έγινε δεκτή!</h4>
+          <h2 class="modal-title"><span class="glyphicon glyphicon-warning-sign"></span> ψήφος σας δεν έγινε δεκτή!</h2>
         </div>
         <div class="modal-body">
-		<p>Προειδοποίηση: η ψήφος σας δεν έγινε δεκτή για έναν από τους παρακάτω λόγους:</p>
-		<p>  1. κωδικός που υποβάλατε δεν είναι έγκυρος.</p>
-		<p>  2. ψηφοδέλτιο έχει ήδη χρησιμοποιηθεί.</p>
-		<p>  3. έτερο ψηφοδέλτιο έχει ήδη χρησιμοποιηθεί.</p>
-        <p>  4. ψηφοφορία δεν έχει ξεκινήσει.</p>
-        <p>  5. ψηφοφορία έχει λήξει.</p>
-        <p>  6. ψηφοφορία έχει παύσει προσωρινά.</p>
+		<h3>Προειδοποίηση: η ψήφος σας δεν έγινε δεκτή για έναν από τους παρακάτω λόγους:</h3>
+		<h3>  1. κωδικός που υποβάλατε δεν είναι έγκυρος.</h3>
+		<h3>  2. ψηφοδέλτιο έχει ήδη χρησιμοποιηθεί.</h3>
+		<h3>  3. έτερο ψηφοδέλτιο έχει ήδη χρησιμοποιηθεί.</h3>
+        <h3>  4. ψηφοφορία δεν έχει ξεκινήσει.</h3>
+        <h3>  5. ψηφοφορία έχει λήξει.</h3>
+        <h3>  6. ψηφοφορία έχει παύσει προσωρινά.</h3>
         </div>
         <div class="modal-footer">
-	<button type="button" class="btn btn-default" data-dismiss="modal">Εντάξει</button> 
+	<button type="button" class="btn btn-default btn-lg" data-dismiss="modal">Εντάξει</button> 
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -45,20 +45,20 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title"><span class="glyphicon glyphicon-warning-sign"></span> ψήφος σας έγινε δεκτή!</h4>
+          <h2 class="modal-title"><span class="glyphicon glyphicon-warning-sign"></span> ψήφος σας έγινε δεκτή!</h2>
         </div>
         <div class="modal-body">
-		<p>Συγχαρητήρια! Η ψήφος σας έγινε δεκτή. Σας ευχαριστούμε για τη συμμετοχή σας στην εκλογική διαδικασία.</p>
+		<h2>Συγχαρητήρια! Η ψήφος σας έγινε δεκτή. Σας ευχαριστούμε για τη συμμετοχή σας στην εκλογική διαδικασία.</h2>
+		<br/>
 		<div align="center">
-		<label><font size="4">Απόδειξη: </font></label>	
-   		<button type="button" class="btn btn-lg disabled" id="receipt"></button>
+		<label><font size="7">Απόδειξη: &nbsp</font></label>	
+		<label id="receipt"><font size="7"> XXXXXX </font></label>
 		</div>
-		<p></p>
-		<p>ΥΓ: Σας ευχαριστούμε για τη συμμετοχή σας. Παρακαλούμε συμπληρώστε το ερωτηματολόγιό μας (χρόνος συμπλήρωσης το πολύ δύο λεπτά) πατώντας πάνω στο 'ΕΡΩΤΗΜΑΤΟΛΟΓΙΟ'.</p>
+		<br/>
+		<h3>ΥΓ: Σας ευχαριστούμε για τη συμμετοχή σας. Παρακαλούμε συμπληρώστε το ερωτηματολόγιό μας (χρόνος συμπλήρωσης το πολύ δύο λεπτά) πατώντας πάνω στο 'ΕΡΩΤΗΜΑΤΟΛΟΓΙΟ'.</h3>
         </div>
         <div class="modal-footer">
-	  <a href="https://crypto.di.uoa.gr/finer/thanks/" type="button" class="btn btn-default" >ΤΕΛΟΣ</a>
-          <a href="https://www.surveymonkey.com/s/7LVDF3F" type="button" class="btn btn-default" >ΕΡΩΤΗΜΑΤΟΛΟΓΙΟ</a>
+          <a href="https://www.surveymonkey.com/s/7LVDF3F" type="button" class="btn btn-warning btn-lg" >ΕΡΩΤΗΜΑΤΟΛΟΓΙΟ</a>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -82,7 +82,7 @@
 <h2>{{opt.name.1}}</h2>
 
 <div align="center">
-<img src="{% static "images/" %}{% if election.total = 4  %}food{% else %}{{ opt.id }}{% endif%}.jpg" height="100" width="200"  class="img-thumbnail">
+<img src="{% static "images/" %}{% if election.total = 121  %}food{% else %}{{ opt.id }}{% endif%}.jpg" height="100" width="200"  class="img-thumbnail">
 </div>
 <br/>
 <br/>
@@ -122,7 +122,7 @@
 {% for opt in row %}
 <td>
 {% if opt.id > 0 %}
-<button type="button" style="width: 135px" class="btn btn-lg btn-info" data-toggle="modal" data-target="#party{{opt.id}}">{{opt.name.0}}</button>
+<button type="button" style="width: 138px" class="btn btn-lg btn-info" data-toggle="modal" data-target="#party{{opt.id}}">{{opt.name.0}}</button>
 {% else %}
 </td>
 {% endif %}
@@ -184,7 +184,7 @@
                                         $('#invalidModal').modal('show');
                                 }
                                 else {
-                                        $('#receipt').replaceWith('<button type="button" class="btn btn-lg disabled" id="receipt">'+data+'</button>');
+                                        $('#receipt').replaceWith('<label id="receipt"><font size="7" color="red"> '+data+'</font></label>');
                                         $('#feedbackModal').modal('show');
                                 }
                         })
