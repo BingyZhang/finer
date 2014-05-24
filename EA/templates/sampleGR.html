@@ -57,7 +57,7 @@
 		<p>ΥΓ: Σας ευχαριστούμε για τη συμμετοχή σας. Παρακαλούμε συμπληρώστε το ερωτηματολόγιό μας (χρόνος συμπλήρωσης το πολύ δύο λεπτά) πατώντας πάνω στο 'ΕΡΩΤΗΜΑΤΟΛΟΓΙΟ'.</p>
         </div>
         <div class="modal-footer">
-	  <a href="https://tal.di.uoa.gr/finer/thanks/" type="button" class="btn btn-default" >ΤΕΛΟΣ</a>
+	  <a href="https://crypto.di.uoa.gr/finer/thanks/" type="button" class="btn btn-default" >ΤΕΛΟΣ</a>
           <a href="https://www.surveymonkey.com/s/7LVDF3F" type="button" class="btn btn-default" >ΕΡΩΤΗΜΑΤΟΛΟΓΙΟ</a>
         </div>
       </div><!-- /.modal-content -->
@@ -69,6 +69,7 @@
 
 {% for row in options %}
 {% for opt in row %}
+{% if opt.id > 0 %}
 <!-- Modal p{{opt.id}}-->
 <div class="modal fade" id="party{{opt.id}}" tabindex="-1" role="dialog" aria-hidden="true">
 <div class="modal-dialog">
@@ -81,7 +82,7 @@
 <h2>{{opt.name.1}}</h2>
 
 <div align="center">
-<img src="{% static "images/" %}{{ opt.id }}.jpg" class="img-thumbnail">
+<img src="{% static "images/" %}{% if election.total = 4  %}food{% else %}{{ opt.id }}{% endif%}.jpg" height="100" width="200"  class="img-thumbnail">
 </div>
 <br/>
 <br/>
@@ -97,6 +98,7 @@
 </div>
 </div>
 </div>
+{% endif %}
 {% endfor %}
 {% endfor %}
 
@@ -118,7 +120,12 @@
 {% for row in options %}
 <tr>
 {% for opt in row %}
-<td> <button type="button" style="width: 135px" class="btn btn-lg btn-info" data-toggle="modal" data-target="#party{{opt.id}}">{{opt.name.0}}</button> </td>
+<td>
+{% if opt.id > 0 %}
+<button type="button" style="width: 135px" class="btn btn-lg btn-info" data-toggle="modal" data-target="#party{{opt.id}}">{{opt.name.0}}</button>
+{% else %}
+</td>
+{% endif %}
 {% endfor %}
 </tr>
 {% endfor %}

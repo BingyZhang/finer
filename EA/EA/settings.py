@@ -20,18 +20,19 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = 'bpwt#01#1u=gjcl6fvrtlrri_@o&(&=by#xgi7!7p-f)i*@1k4'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = False
 
 ALLOWED_HOSTS = [
     'localhost',
-    '.uoa.gr'
+    'di.uoa.gr',
+    '*',
 ]
 
 #captacha pk and sk
-RECAPTCHA_PUBLIC_KEY = '6LcL8O8SAAAAALna8U3aYD2CR5q-A731UkxFtIHE'
-RECAPTCHA_PRIVATE_KEY = '6LcL8O8SAAAAAGsr1cPOF74pfS7ycnmTlNLtPHfO'
+RECAPTCHA_PUBLIC_KEY = '6Lf-3fMSAAAAAANiRCwz2WCbjejdFcf4BmD8ghcY'
+RECAPTCHA_PRIVATE_KEY = '6Lf-3fMSAAAAAEQNlO4j0Bq6Ln9CDotPEGKq3qMm'
 
 # Application definition
 

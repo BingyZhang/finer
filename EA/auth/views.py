@@ -13,8 +13,8 @@ from django.core.files import File
 from tasks import add,prepare_ballot
 # Create your views here.
 
-BB_URL = "https://tal.di.uoa.gr/ea"
-ABB_URL = "https://tal.di.uoa.gr/finer"
+BB_URL = "https://crypto.di.uoa.gr/ea"
+ABB_URL = "https://crypto.di.uoa.gr/finer"
 
 
 
@@ -247,7 +247,7 @@ def sample(request, eid = 0,token = 0, side = 0):
 		temp = {"id":6*i+j+1 ,"name":opts[6*i+j]}
 	    	temprow.append(temp)
 	    else:
-		break
+		temprow.append({"id":-1,"name":""})
 	option_table.append(temprow)
 
     #for AB ballot

@@ -361,9 +361,10 @@ def client(request, eid = 0):
 	    if e.was_ended():
 		running = 2
 		if not e.request:
-		    send_request(e)
-		    e.request = True
-		    e.save()
+		    #send_request(e)
+		    #e.request = True
+		    #e.save()
+		    pass
 	    if e.pause:
 		running = 10
 	    if running != 1:
@@ -520,8 +521,8 @@ def test(request, tab = 0):
     p.drawString(60, 600, "Votecode: PUS8-ASPZ-RGQI  Receipt: OY2OR6  Option: Yes")
     p.drawString(60, 580, "Votecode: UQ02-IXTZ-DLDL  Receipt: YH84O7  Option: No")
     p.drawString(60, 560, "================================================")
-    p.drawString(60, 540, "VBB url: http://tal.di.uoa.gr/finer/vbb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
-    p.drawString(60, 520, "ABB url: http://tal.di.uoa.gr/finer/abb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
+    p.drawString(60, 540, "VBB url: https://crypto.di.uoa.gr/finer/vbb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
+    p.drawString(60, 520, "ABB url: https://crypto.di.uoa.gr/finer/abb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
     p.drawString(60, 500, "Client url:")
     p.drawString(60, 480,"http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/2TN7LYA4ERH8GP1V693647YZI/")
 
