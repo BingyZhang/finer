@@ -71,6 +71,8 @@ def send_request(e):
 	opt_plainsH = []#decommit
         opt_ciphersX = []#ElGamal
         opt_plainsX = []#decommit
+	totalH = 0
+	totalX = 0
         #prepare the table_data
         for each in votes:
 		feedback = each.dballot_set.filter(checked = True)
@@ -86,6 +88,7 @@ def send_request(e):
 		for i in range(n):
 			if each.votecode == codes1[i]:
 			    if int(each.serial) < magic_X:
+				totalH+=1
 				mark1.append("Voted (H)")
 				# put ciphers
 				temp = cipher1[2*i].split(' ')
@@ -100,6 +103,7 @@ def send_request(e):
                                         opt_plainsH.append(t)
 
 			    else:
+				totalX+=1
                                 mark1.append("Voted (X)")
                                 # put ciphers
                                 temp = cipher1[2*i].split(' ')
@@ -117,6 +121,7 @@ def send_request(e):
 		for i in range(n):
                         if each.votecode == codes2[i]:
 			    if int(each.serial) < magic_X:
+				totalH+=1
                                 mark2.append("Voted (H)")
                                 # put ciphers
                                 temp = cipher2[2*i].split(' ')
@@ -130,6 +135,7 @@ def send_request(e):
                                 for t in temp:
                                         opt_plainsH.append(t)
 			    else:
+				totalX+=1
 				mark2.append("Voted (X)")
                                 # put ciphers
                                 temp = cipher2[2*i].split(' ')
@@ -194,13 +200,13 @@ def send_request(e):
 			for i in range(n):
 				tallyresult = T%max
 				T = (T - tallyresult)/max
-				opts[i].votes = tallyresult
+				opts[i].votes = int(1000*tallyresult/totalH)
 				opts[i].save()	
 		else:
 			for i in range(n):
                                 tallyresult = T%max
                                 T = (T - tallyresult)/max
-                                opts[i].votes += 10000*tallyresult
+                                opts[i].votes += 10000*int(1000*tallyresult/totalX)
                                 opts[i].save()
 	e.tally = True
 	e.save()

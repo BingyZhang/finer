@@ -13,6 +13,7 @@ from django.utils import timezone
 from abb.models import AbbKey,AbbData, UpdateInfo, Auxiliary,Abbinit
 import cStringIO, zipfile, csv, copy,os, base64, random
 from django.core.files import File
+from decimal import *
 
 # Create your views here.
 
@@ -79,8 +80,8 @@ def index(request, eid = 0, tab = -1):
 	for x in options:
 	    voteH = x.votes%10000
 	    voteX = (x.votes - voteH)/10000
-	    short_opts.append([voteH, x.text.split(";")[0]]) 
-	    short_opts2.append([voteX, x.text.split(";")[0]])
+	    short_opts.append([(Decimal(voteH)/10).quantize(Decimal('.1'), rounding=ROUND_DOWN), x.text.split(";")[0]]) 
+	    short_opts2.append([(Decimal(voteX)/10).quantize(Decimal('.1'), rounding=ROUND_DOWN), x.text.split(";")[0]])
 	sorted_opts = sorted(short_opts,reverse=True)
 	sorted_opts2 = sorted(short_opts2,reverse=True)
     else:
