@@ -26,7 +26,8 @@ TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
-    '.uoa.gr'
+    'di.uoa.gr',
+    '*',
 ]
 
 

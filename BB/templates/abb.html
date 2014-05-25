@@ -145,15 +145,34 @@ fieldset[disabled] .btn-sample.active {
 
 <div class="container">
         {% if resultshow %}
+	{% if election.EID = "2" %}
+        <div align="center" style="word-wrap: break-word">
+        <h3><font color="blue">Election Result (Ηλιουπολη): </font></h3>
+        {% for opt in options %}
+        <a type="button" style="width: 140px" class="btn btn-info">{{opt.1}} <span class="badge">{{opt.0}}</span></a>
+        {% endfor %}
+        <h3><font size ="5" color="blue">Decommitment Information (Ηλιουπολη): </font></h3> <button type="button" class="btn {% if final.verify %}btn-success{% else %}btn-danger{% endif %}" data-toggle="popover"
+      data-content="{{final.tallycipher}}">{{final.tallyplain}}</button>
+        <br/>
+
+        <h3><font color="blue">Election Result (Χαλάνδρι): </font></h3>
+        {% for opt in options2 %}
+        <a type="button" style="width: 140px" class="btn btn-info">{{opt.1}} <span class="badge">{{opt.0}}</span></a>
+        {% endfor %}
+	<h3><font size ="5" color="blue">Decommitment Information (Χαλάνδρι): </font></h3> <button type="button" class="btn {% if final2.verify %}btn-success{% else %}btn-danger{% endif %}" data-toggle="popover"
+      data-content="{{final2.tallycipher}}">{{final2.tallyplain}}</button>
+        </div>
+	{% else %}
         <div align="center" style="word-wrap: break-word">
         <h3><font color="blue">Election Result: </font></h3>
         {% for opt in options %}
-        <a type="button" style="width: 150px" class="btn btn-info">{{opt.1}} <span class="badge">{{opt.0}}</span></a>
+        <a type="button" style="width: 140px" class="btn btn-info">{{opt.1}} <span class="badge">{{opt.0}}</span></a>
         {% endfor %}
         <h3><font size ="5" color="blue">Decommitment Information: </font></h3> <button type="button" class="btn {% if final.verify %}btn-success{% else %}btn-danger{% endif %}" data-toggle="popover"
       data-content="{{final.tallycipher}}">{{final.tallyplain}}</button>
         </div>
-        {% endif%}
+	{% endif %}
+        {% endif %}
 
    <ul class="pagination">
     {% for ver in BigData.Ver %}

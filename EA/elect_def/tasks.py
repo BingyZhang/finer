@@ -274,19 +274,13 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
 	data = [['Πολιτικό κόμμα', 'Κωδικός A', 'Απόδειξη A','','Πολιτικό κόμμα', 'Κωδικός A', 'Απόδειξη A']]
 	data2 = [['Πολιτικό κόμμα', 'Κωδικός B', 'Απόδειξη B','','Πολιτικό κόμμα', 'Κωδικός B', 'Απόδειξη B']]
 
-	for ii in range(21):
+	for ii in range(len(opts)/2):
 		tempname1 = opts[2*ii].split(';')
                 tempname2 = opts[2*ii+1].split(';')
 		temprow = [tempname1[0],ballot_code1[2*ii], ballot_rec1[2*ii],'',tempname2[0],ballot_code1[2*ii+1],ballot_rec1[2*ii+1]]
 		data.append(temprow)
                 temprow = [tempname1[0],ballot_code2[2*ii], ballot_rec2[2*ii],'',tempname2[0],ballot_code2[2*ii+1],ballot_rec2[2*ii+1]]
                 data2.append(temprow)
-	#the 43th party.
-        #temprow = [tempname1[0],ballot_code1[42], ballot_rec1[42],'','','','']
-        #data.append(temprow)
-        #temprow = [tempname1[0],ballot_code2[42], ballot_rec2[42],'','','','']
-        #data2.append(temprow)
-
 
 	serial = [['Σειριακός αριθμός:',b.serial,'Σειριακός αριθμός:',b.serial]]
 
@@ -338,7 +332,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
 	#parts.append(I)
     	parts.append(Spacer(1, 0.3 * inch))
         parts.append(Paragraph("Εξυπηρετητής Ψηφοδελτίων FINER &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp "+BB_URL+"abb/"+e.EID+"/", style))
-    	parts.append(Spacer(1, 0.25 * inch))
+    	parts.append(Spacer(1, 0.55 * inch))
     	parts.append( Paragraph("Παρακαλούμε χρησιμοποιήστε οποιαδήποτε από τις δύο πλευρές αυτού του φύλλου.",style_warning))
 #########append url for debug
     	#parts.append(Paragraph(SAMPLE_URL+e.EID+"/"+stoken+"/",style_warning))
@@ -380,7 +374,7 @@ def prepare_ballot(e, total, n, emails, keyemails, intpdf):
         #parts.append(I)
     	parts.append(Spacer(1, 0.3 * inch))
     	parts.append(Paragraph("Εξυπηρετητής Ψηφοδελτίων FINER &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp "+BB_URL+"abb/"+e.EID+"/", style))
-    	parts.append(Spacer(1, 0.25 * inch))
+    	parts.append(Spacer(1, 0.55 * inch))
     	parts.append( Paragraph("Παρακαλούμε χρησιμοποιήστε οποιαδήποτε από τις δύο πλευρές αυτού του φύλλου.",style_warning))
 
     	doc.build(parts)

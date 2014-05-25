@@ -212,6 +212,7 @@ def sample(request, eid = 0,token = 0, side = 0):
     opts = [x['text'].split(';') for x in options]
     opts_short = [x['text'].split(';')[0] for x in options]
     running = 0
+    time = 0
     if e.was_started():
         running = 1
         time = int((e.end - timezone.now()).total_seconds())
@@ -247,7 +248,7 @@ def sample(request, eid = 0,token = 0, side = 0):
 		temp = {"id":6*i+j+1 ,"name":opts[6*i+j]}
 	    	temprow.append(temp)
 	    else:
-		break
+		temprow.append({"id":-1,"name":""})
 	option_table.append(temprow)
 
     #for AB ballot
