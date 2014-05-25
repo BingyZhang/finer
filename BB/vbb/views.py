@@ -14,6 +14,9 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics 
 from reportlab.pdfbase.ttfonts import TTFont
 # Create your views here.
+magic_X = 105
+
+
 
 def addbars(code):
         output = ''
@@ -50,12 +53,167 @@ def empty(request):
 	return HttpResponse('Please specify the election ID.')
 
 def send_request(e):
+#only for exit poll
+#####################################################
+    if e.EID == "2":
 	#tally
 	votes = e.vbb_set.all()
 	#if nobody voted directly return
 	if len(votes)==0:
 		e.tally = True
         	e.save()
+		return 0
+	opts = e.choice_set.order_by('id')
+	n = len(opts)
+	#get all for fast disk IO
+	abbs = e.abbinit_set.all()
+	opt_ciphersH = []#ElGamal
+	opt_plainsH = []#decommit
+        opt_ciphersX = []#ElGamal
+        opt_plainsX = []#decommit
+        #prepare the table_data
+        for each in votes:
+		feedback = each.dballot_set.filter(checked = True)
+                record = abbs.get(serial = each.serial)
+		codes1 = record.codes1.split(',')
+		codes2 = record.codes2.split(',')
+		cipher1 =record.cipher1.split(',')
+		cipher2 = record.cipher2.split(',')
+		plain1 = record.plain1.split(',')
+		plain2 = record.plain2.split(',')
+		mark1 = []
+		mark2 = []
+		for i in range(n):
+			if each.votecode == codes1[i]:
+			    if int(each.serial) < magic_X:
+				mark1.append("Voted (H)")
+				# put ciphers
+				temp = cipher1[2*i].split(' ')
+				for t in temp:
+					opt_ciphersH.append(t)
+                                temp = cipher1[2*i+1].split(' ')
+                                for t in temp:
+                                        opt_ciphersH.append(t)
+				#plain and decommit
+				temp = plain1[i].split(' ')
+				for t in temp:
+                                        opt_plainsH.append(t)
+
+			    else:
+                                mark1.append("Voted (X)")
+                                # put ciphers
+                                temp = cipher1[2*i].split(' ')
+                                for t in temp:
+                                        opt_ciphersX.append(t)
+                                temp = cipher1[2*i+1].split(' ')
+                                for t in temp:
+                                        opt_ciphersX.append(t)
+                                #plain and decommit
+                                temp = plain1[i].split(' ')
+                                for t in temp:
+                                        opt_plainsX.append(t)				
+			else:
+				mark1.append("")
+		for i in range(n):
+                        if each.votecode == codes2[i]:
+			    if int(each.serial) < magic_X:
+                                mark2.append("Voted (H)")
+                                # put ciphers
+                                temp = cipher2[2*i].split(' ')
+                                for t in temp:
+                                        opt_ciphersH.append(t)
+                                temp = cipher2[2*i+1].split(' ')
+                                for t in temp:
+                                        opt_ciphersH.append(t)
+                                #plain and decommit
+                                temp = plain2[i].split(' ')
+                                for t in temp:
+                                        opt_plainsH.append(t)
+			    else:
+				mark2.append("Voted (X)")
+                                # put ciphers
+                                temp = cipher2[2*i].split(' ')
+                                for t in temp:
+                                        opt_ciphersX.append(t)
+                                temp = cipher2[2*i+1].split(' ')
+                                for t in temp:
+                                        opt_ciphersX.append(t)
+                                #plain and decommit
+                                temp = plain2[i].split(' ')
+                                for t in temp:
+                                        opt_plainsX.append(t)
+                        else:
+                                mark2.append("")
+		#mark feedbacks
+                if len(feedback)!=0:
+			for feed in feedback:
+				for i in range(n):
+                        		if feed.code == codes1[i]:
+						mark1[i] = feed.value
+				for i in range(n):
+                                        if feed.code == codes2[i]:
+                                                mark2[i] = feed.value
+		#store marks
+		record.mark1 = ",".join(mark1)
+		record.mark2 = ",".join(mark2)
+		record.save()
+	#output for tally
+	for chunk in range(2):
+		if chunk == 0:
+			temp_str_c = "\n".join(opt_ciphersH)
+			temp_str_d = "\n".join(opt_plainsH)
+		else:
+			temp_str_c = "\n".join(opt_ciphersX)
+                        temp_str_d = "\n".join(opt_plainsX)
+		#f = open('/var/www/finer/EC-ElGamal/debug.txt', 'a')
+		#f.write(temp_str)
+		#f.write("\n\n\n")
+		#f.close
+		p = subprocess.Popen(["sh","/var/www/finer/EC-ElGamal/Tally.sh",temp_str_c, temp_str_d],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		output,err = p.communicate()
+		#read the files and create Aux
+		aux = Auxiliary(election = e)
+		if int(output) == 1:
+			aux.verify = True
+		f = open('/var/www/finer/EC-ElGamal/EC_sum.txt')
+        	lines = f.readlines()
+        	f.close()
+		aux.tallycipher = ",".join(lines)	
+
+        	f = open('/var/www/finer/EC-ElGamal/EC_decommit.txt')
+        	lines = f.readlines()
+        	f.close()
+        	aux.tallyplain = ",".join(lines)
+		aux.save()	
+
+		#compute and store result
+		tallyresult = 0
+		T = long(base64.b64decode(lines[0]).encode('hex'),16)
+		max = e.total	
+		if chunk == 0:
+			for i in range(n):
+				tallyresult = T%max
+				T = (T - tallyresult)/max
+				opts[i].votes = tallyresult
+				opts[i].save()	
+		else:
+			for i in range(n):
+                                tallyresult = T%max
+                                T = (T - tallyresult)/max
+                                opts[i].votes += 10000*tallyresult
+                                opts[i].save()
+	e.tally = True
+	e.save()
+####################################################
+    else:
+	#tally
+	votes = e.vbb_set.all()
+	#if nobody voted directly return
+	if len(votes)==0:
+		e.tally = True
+        	e.save()
+		aux = Auxiliary(election = e,verify = True, tallyplain = "No Vote", tallycipher = "0")
+		aux.save()
 		return 0
 	opts = e.choice_set.order_by('id')
 	n = len(opts)
@@ -156,7 +314,7 @@ def send_request(e):
 
 	e.tally = True
 	e.save()
-	return 1
+    return 1
 
 def verify_code(e,s,vcode):
 	codelist = []
@@ -521,8 +679,8 @@ def test(request, tab = 0):
     p.drawString(60, 600, "Votecode: PUS8-ASPZ-RGQI  Receipt: OY2OR6  Option: Yes")
     p.drawString(60, 580, "Votecode: UQ02-IXTZ-DLDL  Receipt: YH84O7  Option: No")
     p.drawString(60, 560, "================================================")
-    p.drawString(60, 540, "VBB url: https://crypto.di.uoa.gr/finer/vbb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
-    p.drawString(60, 520, "ABB url: https://crypto.di.uoa.gr/finer/abb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
+    p.drawString(60, 540, "VBB url: https://tal.di.uoa.gr/finer/vbb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
+    p.drawString(60, 520, "ABB url: https://tal.di.uoa.gr/finer/abb/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/")
     p.drawString(60, 500, "Client url:")
     p.drawString(60, 480,"http://tal.di.uoa.gr/ea/client/JFCBIBJC539YXYTYGV53FMVSQF0MMFQ/2TN7LYA4ERH8GP1V693647YZI/")
 

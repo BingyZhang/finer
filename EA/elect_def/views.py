@@ -124,7 +124,7 @@ party_list = [
 
 
 
-BB_URL = "https://crypto.di.uoa.gr/finer/"
+BB_URL = "https://tal.di.uoa.gr/finer/"
 
 def base36encode(number, alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
     """Converts an integer to a base36 string."""

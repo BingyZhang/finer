@@ -71,9 +71,22 @@ def index(request, eid = 0, tab = -1):
         return HttpResponse('Not ready yet!')
 #display results 
     options = e.choice_set.all()
-    #short party names only sorted
-    short_opts = [[x.votes, x.text.split(";")[0]] for x in options ]
-    sorted_opts = sorted(short_opts,reverse=True)
+    short_opts = []
+    short_opts2 = []
+    sorted_opts = []
+    sorted_opts2 = []
+    if e.EID == "2":
+	for x in options:
+	    voteH = x.votes%10000
+	    voteX = (x.votes - voteH)/10000
+	    short_opts.append([voteH, x.text.split(";")[0]]) 
+	    short_opts2.append([voteX, x.text.split(";")[0]])
+	sorted_opts = sorted(short_opts,reverse=True)
+	sorted_opts2 = sorted(short_opts2,reverse=True)
+    else:
+    	#short party names only sorted
+    	short_opts = [[x.votes, x.text.split(";")[0]] for x in options ]
+    	sorted_opts = sorted(short_opts,reverse=True)
 
     abb_list = e.abbinit_set.all()
     p = Paginator(abb_list,1)
@@ -99,13 +112,17 @@ def index(request, eid = 0, tab = -1):
     #version 1 or 1,2
     version = [1]
     finaltally = None
+    finaltally2 = None
     resultshow = False
     if e.tally:
 	resultshow = True
 	if int_tab == -1:
 	    int_tab = 2
         version.append(2)
-	finaltally = e.auxiliary_set.all()[0]
+	auxset = e.auxiliary_set.all()
+	finaltally = auxset[0]
+	if len(auxset) >=2:
+	    finaltally2 = auxset[1]
     else:
 	if int_tab == -1:
             int_tab = 1
@@ -183,7 +200,7 @@ def index(request, eid = 0, tab = -1):
         Vtable.append(table)
     #end of verion 2
     BigData={'Data':Vtable,'Ver':version} 
-    return render_to_response('abb.html', {'election':e,'tab':int_tab, 'options':sorted_opts,  'resultshow': resultshow, 'final':finaltally  , 'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
+    return render_to_response('abb.html', {'election':e,'tab':int_tab, 'options':sorted_opts, 'options2':sorted_opts2, 'resultshow': resultshow, 'final':finaltally,  'final2':finaltally2, 'next_page':next_page, 'BigData':BigData, 'col_names':col_names},  context_instance=RequestContext(request))         
      
 
 

@@ -13,8 +13,8 @@ from django.core.files import File
 from tasks import add,prepare_ballot
 # Create your views here.
 
-BB_URL = "https://crypto.di.uoa.gr/ea"
-ABB_URL = "https://crypto.di.uoa.gr/finer"
+BB_URL = "https://tal.di.uoa.gr/ea"
+ABB_URL = "https://tal.di.uoa.gr/finer"
 
 
 

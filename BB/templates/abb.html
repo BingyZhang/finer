@@ -145,6 +145,24 @@ fieldset[disabled] .btn-sample.active {
 
 <div class="container">
         {% if resultshow %}
+	{% if election.EID = "2" %}
+        <div align="center" style="word-wrap: break-word">
+        <h3><font color="blue">Election Result (Ηλιουπολη): </font></h3>
+        {% for opt in options %}
+        <a type="button" style="width: 140px" class="btn btn-info">{{opt.1}} <span class="badge">{{opt.0}}</span></a>
+        {% endfor %}
+        <h3><font size ="5" color="blue">Decommitment Information (Ηλιουπολη): </font></h3> <button type="button" class="btn {% if final.verify %}btn-success{% else %}btn-danger{% endif %}" data-toggle="popover"
+      data-content="{{final.tallycipher}}">{{final.tallyplain}}</button>
+        <br/>
+
+        <h3><font color="blue">Election Result (Χαλάνδρι): </font></h3>
+        {% for opt in options2 %}
+        <a type="button" style="width: 140px" class="btn btn-info">{{opt.1}} <span class="badge">{{opt.0}}</span></a>
+        {% endfor %}
+	<h3><font size ="5" color="blue">Decommitment Information (Χαλάνδρι): </font></h3> <button type="button" class="btn {% if final2.verify %}btn-success{% else %}btn-danger{% endif %}" data-toggle="popover"
+      data-content="{{final2.tallycipher}}">{{final2.tallyplain}}</button>
+        </div>
+	{% else %}
         <div align="center" style="word-wrap: break-word">
         <h3><font color="blue">Election Result: </font></h3>
         {% for opt in options %}
@@ -153,11 +171,12 @@ fieldset[disabled] .btn-sample.active {
         <h3><font size ="5" color="blue">Decommitment Information: </font></h3> <button type="button" class="btn {% if final.verify %}btn-success{% else %}btn-danger{% endif %}" data-toggle="popover"
       data-content="{{final.tallycipher}}">{{final.tallyplain}}</button>
         </div>
-        {% endif%}
+	{% endif %}
+        {% endif %}
 
    <ul class="pagination">
     {% for ver in BigData.Ver %}
-    <li {% if ver|add:"0" = tab|add:"0" %}class="active"{% endif %} id="V{{num}}"><a href="https://crypto.di.uoa.gr/finer/abb/{{election.EID}}/{{ver}}/">Ver. {{ver}}</a></li>
+    <li {% if ver|add:"0" = tab|add:"0" %}class="active"{% endif %} id="V{{num}}"><a href="https://tal.di.uoa.gr/finer/abb/{{election.EID}}/{{ver}}/">Ver. {{ver}}</a></li>
     {% endfor %}
    </ul>      
 
@@ -220,7 +239,7 @@ fieldset[disabled] .btn-sample.active {
        </table>
 	{% if next_page %}
 	<div class="scroll">
-  	   <div class="next"> <a href="https://crypto.di.uoa.gr/finer/abb/{{election.EID}}/{{tab}}/{{next_page}}/">next</a></div>
+  	   <div class="next"> <a href="https://tal.di.uoa.gr/finer/abb/{{election.EID}}/{{tab}}/{{next_page}}/">next</a></div>
 	</div>	    
     {% endif %}
 	 {% endfor %}   <!-- smalldata -->  
